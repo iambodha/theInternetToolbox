@@ -17,21 +17,51 @@ export interface PDFFile {
 }
 
 export class PDFUtils {
+  private static isInitialized = false;
+
   // Add method to initialize PDF.js
   static async initializePDFJS(): Promise<void> {
-    if (typeof window !== 'undefined' && !window.pdfjsLib) {
-      // Dynamically import PDF.js
-      const pdfjsLib = await import('pdfjs-dist');
-      // Use local worker file instead of CDN
-      pdfjsLib.GlobalWorkerOptions.workerSrc = '/js/pdf.worker.min.js';
-      window.pdfjsLib = pdfjsLib;
+    if (typeof window !== 'undefined' && !this.isInitialized) {
+      try {
+        // Dynamically import PDF.js
+        const pdfjsLib = await import('pdfjs-dist');
+        
+        // Get the base path from the current URL
+        // This will work both locally and on GitHub Pages
+        const basePath = window.location.pathname.startsWith('/theInternetToolbox') 
+          ? '/theInternetToolbox' 
+          : '';
+        const workerPath = `${basePath}/js/pdf.worker.min.js`;
+        
+        // Set worker path to local file immediately
+        pdfjsLib.GlobalWorkerOptions.workerSrc = workerPath;
+        
+        // Also try alternative configuration methods for better compatibility
+        if (pdfjsLib.GlobalWorkerOptions) {
+          pdfjsLib.GlobalWorkerOptions.workerPort = null;
+          pdfjsLib.GlobalWorkerOptions.workerSrc = workerPath;
+        }
+        
+        window.pdfjsLib = pdfjsLib;
+        this.isInitialized = true;
+        
+        console.log('PDF.js initialized with worker:', pdfjsLib.GlobalWorkerOptions.workerSrc);
+      } catch (error) {
+        console.error('Failed to initialize PDF.js:', error);
+        throw error;
+      }
     }
   }
 
   // Add method to generate page previews
   static async generatePagePreviews(file: File, maxPages?: number): Promise<string[]> {
     try {
+      // Ensure PDF.js is initialized before use
       await this.initializePDFJS();
+      
+      if (!window.pdfjsLib) {
+        throw new Error('PDF.js not available');
+      }
       
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -60,7 +90,7 @@ export class PDFUtils {
       return previews;
     } catch (error) {
       console.error('Error generating page previews:', error);
-      return [];
+      throw error;
     }
   }
 
