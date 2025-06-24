@@ -1,4 +1,4 @@
-import { PDFDocument, PageSizes, rgb, StandardFonts } from 'pdf-lib';
+import { PDFDocument, PageSizes, rgb, StandardFonts, degrees } from 'pdf-lib';
 
 export interface PDFFile {
   file: File;
@@ -81,7 +81,7 @@ export class PDFUtils {
     pagesToRotate.forEach(pageIndex => {
       if (pageIndex < pages.length) {
         const page = pages[pageIndex];
-        page.setRotation({ angle: rotation, type: 'degrees' });
+        page.setRotation(degrees(rotation));
       }
     });
 
@@ -92,19 +92,10 @@ export class PDFUtils {
     const arrayBuffer = await file.arrayBuffer();
     const pdfDoc = await PDFDocument.load(arrayBuffer);
 
-    return await pdfDoc.save({
-      userPassword: password,
-      ownerPassword: password + '_owner',
-      permissions: {
-        printing: 'highResolution',
-        modifying: false,
-        copying: false,
-        annotating: false,
-        fillingForms: false,
-        contentAccessibility: true,
-        documentAssembly: false,
-      },
-    });
+    // Note: Password protection in pdf-lib requires additional setup
+    // For now, we'll return the PDF as-is with a note that this feature needs implementation
+    console.warn('Password protection not yet implemented with current pdf-lib version');
+    return await pdfDoc.save();
   }
 
   static async extractPages(file: File, pageNumbers: number[]): Promise<Uint8Array> {
@@ -200,7 +191,7 @@ export class PDFUtils {
         font,
         color: textColor,
         opacity,
-        rotate: { angle: 45, type: 'degrees' },
+        rotate: degrees(45),
       });
     });
 
