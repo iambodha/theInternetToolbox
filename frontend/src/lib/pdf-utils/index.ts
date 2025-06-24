@@ -1,14 +1,69 @@
 import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib';
 
+// Add PDF.js types for page rendering
+declare global {
+  interface Window {
+    pdfjsLib: any;
+  }
+}
+
 export interface PDFFile {
   file: File;
   name: string;
   size: number;
   pageCount?: number;
   preview?: string;
+  pagePreviews?: string[]; // Array of base64 image URLs for each page
 }
 
 export class PDFUtils {
+  // Add method to initialize PDF.js
+  static async initializePDFJS(): Promise<void> {
+    if (typeof window !== 'undefined' && !window.pdfjsLib) {
+      // Dynamically import PDF.js
+      const pdfjsLib = await import('pdfjs-dist');
+      // Use local worker file instead of CDN
+      pdfjsLib.GlobalWorkerOptions.workerSrc = '/js/pdf.worker.min.js';
+      window.pdfjsLib = pdfjsLib;
+    }
+  }
+
+  // Add method to generate page previews
+  static async generatePagePreviews(file: File, maxPages?: number): Promise<string[]> {
+    try {
+      await this.initializePDFJS();
+      
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const numPages = Math.min(pdf.numPages, maxPages || pdf.numPages);
+      const previews: string[] = [];
+
+      for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const scale = 0.5; // Smaller scale for thumbnails
+        const viewport = page.getViewport({ scale });
+        
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d')!;
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        await page.render({
+          canvasContext: context,
+          viewport: viewport,
+        }).promise;
+
+        const imageUrl = canvas.toDataURL('image/jpeg', 0.8);
+        previews.push(imageUrl);
+      }
+
+      return previews;
+    } catch (error) {
+      console.error('Error generating page previews:', error);
+      return [];
+    }
+  }
+
   static async getPageCount(file: File): Promise<number> {
     try {
       const arrayBuffer = await file.arrayBuffer();
