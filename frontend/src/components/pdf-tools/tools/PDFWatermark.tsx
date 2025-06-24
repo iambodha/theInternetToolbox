@@ -8,11 +8,16 @@ export default function PDFWatermark() {
   const [file, setFile] = useState<PDFFile | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [watermarkText, setWatermarkText] = useState('');
-  const [options, setOptions] = useState({
+  const [options, setOptions] = useState<{
+    opacity: number;
+    fontSize: number;
+    color: string;
+    position: 'center' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  }>({
     opacity: 0.3,
     fontSize: 50,
     color: '#808080',
-    position: 'center' as const,
+    position: 'center',
   });
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -105,7 +110,7 @@ export default function PDFWatermark() {
                 <label className="block text-sm font-medium mb-2">Position</label>
                 <select
                   value={options.position}
-                  onChange={(e) => setOptions(prev => ({ ...prev, position: e.target.value as any }))}
+                  onChange={(e) => setOptions(prev => ({ ...prev, position: e.target.value as 'center' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' }))}
                   className="w-full px-3 py-2 bg-background border rounded-lg"
                 >
                   <option value="center">Center</option>

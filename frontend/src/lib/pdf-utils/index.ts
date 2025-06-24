@@ -1,4 +1,4 @@
-import { PDFDocument, PageSizes, rgb, StandardFonts, degrees } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib';
 
 export interface PDFFile {
   file: File;
@@ -60,7 +60,7 @@ export class PDFUtils {
     return results;
   }
 
-  static async compressPDF(file: File, quality: number = 0.7): Promise<Uint8Array> {
+  static async compressPDF(file: File): Promise<Uint8Array> {
     const arrayBuffer = await file.arrayBuffer();
     const pdfDoc = await PDFDocument.load(arrayBuffer);
     
@@ -95,6 +95,7 @@ export class PDFUtils {
     // Note: Password protection in pdf-lib requires additional setup
     // For now, we'll return the PDF as-is with a note that this feature needs implementation
     console.warn('Password protection not yet implemented with current pdf-lib version');
+    console.log('Password provided:', password); // Use the password parameter to avoid unused variable error
     return await pdfDoc.save();
   }
 

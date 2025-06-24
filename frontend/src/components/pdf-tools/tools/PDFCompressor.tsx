@@ -7,7 +7,6 @@ import { PDFUtils, PDFFile } from '@/lib/pdf-utils';
 export default function PDFCompressor() {
   const [file, setFile] = useState<PDFFile | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [compressionLevel, setCompressionLevel] = useState<'low' | 'medium' | 'high'>('medium');
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const pdfFile = acceptedFiles.find(file => file.type === 'application/pdf');
@@ -33,13 +32,7 @@ export default function PDFCompressor() {
 
     setIsProcessing(true);
     try {
-      const qualityMap = {
-        low: 0.3,
-        medium: 0.7,
-        high: 0.9,
-      };
-
-      const compressedPDF = await PDFUtils.compressPDF(file.file, qualityMap[compressionLevel]);
+      const compressedPDF = await PDFUtils.compressPDF(file.file);
       const filename = file.name.replace('.pdf', '_compressed.pdf');
       PDFUtils.downloadFile(compressedPDF, filename);
     } catch (error) {
@@ -47,19 +40,6 @@ export default function PDFCompressor() {
       alert('Error compressing PDF. Please try again.');
     } finally {
       setIsProcessing(false);
-    }
-  };
-
-  const getCompressionDescription = () => {
-    switch (compressionLevel) {
-      case 'low':
-        return 'Maximum compression, lower quality';
-      case 'medium':
-        return 'Balanced compression and quality';
-      case 'high':
-        return 'Minimal compression, high quality';
-      default:
-        return '';
     }
   };
 
@@ -98,32 +78,6 @@ export default function PDFCompressor() {
                   {file.pageCount} pages • {PDFUtils.formatFileSize(file.size)}
                 </p>
               </div>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Compression Level</h3>
-            <div className="space-y-3">
-              {[
-                { level: 'low' as const, label: 'Maximum Compression', desc: 'Smallest file size, lower quality' },
-                { level: 'medium' as const, label: 'Balanced', desc: 'Good balance of size and quality' },
-                { level: 'high' as const, label: 'Minimal Compression', desc: 'Larger file size, best quality' },
-              ].map((option) => (
-                <label key={option.level} className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="compression"
-                    value={option.level}
-                    checked={compressionLevel === option.level}
-                    onChange={(e) => setCompressionLevel(e.target.value as 'low' | 'medium' | 'high')}
-                    className="w-4 h-4"
-                  />
-                  <div>
-                    <p className="font-medium">{option.label}</p>
-                    <p className="text-sm text-foreground/60">{option.desc}</p>
-                  </div>
-                </label>
-              ))}
             </div>
           </div>
 

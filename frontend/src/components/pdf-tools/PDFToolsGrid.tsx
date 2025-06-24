@@ -4,7 +4,6 @@ import { useState } from 'react';
 import PDFMerger from './tools/PDFMerger';
 import PDFSplitter from './tools/PDFSplitter';
 import PDFCompressor from './tools/PDFCompressor';
-import PDFConverter from './tools/PDFConverter';
 import PDFProtector from './tools/PDFProtector';
 import PDFUnlocker from './tools/PDFUnlocker';
 import PDFRotator from './tools/PDFRotator';

@@ -15,7 +15,6 @@ export default function PDFSplitter() {
   const [file, setFile] = useState<PDFFile | null>(null);
   const [splitRanges, setSplitRanges] = useState<SplitRange[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [splitMode, setSplitMode] = useState<'pages' | 'ranges'>('pages');
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const pdfFile = acceptedFiles.find(file => file.type === 'application/pdf');
@@ -30,24 +29,17 @@ export default function PDFSplitter() {
     });
 
     // Initialize with single page splits
-    if (splitMode === 'pages') {
-      const ranges: SplitRange[] = [];
-      for (let i = 1; i <= pageCount; i++) {
-        ranges.push({
-          id: i,
-          start: i,
-          end: i,
-          name: `Page ${i}`,
-        });
-      }
-      setSplitRanges(ranges);
-    } else {
-      setSplitRanges([
-        { id: 1, start: 1, end: Math.ceil(pageCount / 2), name: 'Part 1' },
-        { id: 2, start: Math.ceil(pageCount / 2) + 1, end: pageCount, name: 'Part 2' },
-      ]);
+    const ranges: SplitRange[] = [];
+    for (let i = 1; i <= pageCount; i++) {
+      ranges.push({
+        id: i,
+        start: i,
+        end: i,
+        name: `Page ${i}`,
+      });
     }
-  }, [splitMode]);
+    setSplitRanges(ranges);
+  }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
