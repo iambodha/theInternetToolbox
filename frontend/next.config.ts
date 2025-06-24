@@ -6,9 +6,9 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true
   },
-  // Add base path and asset prefix for GitHub Pages
-  basePath: process.env.NODE_ENV === 'production' ? '/theInternetToolbox' : '',
-  assetPrefix: process.env.NODE_ENV === 'production' ? '/theInternetToolbox/' : '',
+  // GitHub Pages deployment configuration
+  basePath: process.env.GITHUB_ACTIONS ? '/theInternetToolbox' : '',
+  assetPrefix: process.env.GITHUB_ACTIONS ? '/theInternetToolbox/' : '',
 };
 
 export default nextConfig;
