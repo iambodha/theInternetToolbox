@@ -5,12 +5,6 @@ const nextConfig: NextConfig = {
   trailingSlash: true,
   images: {
     unoptimized: true
-  },
-  // Ensure consistent asset prefix for static exports
-  assetPrefix: process.env.NODE_ENV === 'production' ? './' : '',
-  // Disable server-side features that don't work with static export
-  experimental: {
-    esmExternals: 'loose'
   }
 };
 
