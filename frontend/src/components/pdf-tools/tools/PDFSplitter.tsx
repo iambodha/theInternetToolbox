@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
+import Image from 'next/image';
 import { PDFUtils, PDFFile } from '@/lib/pdf-utils';
 
 interface SplitRange {
@@ -106,10 +107,12 @@ function PagePreview({
     >
       <div className="bg-white rounded-lg shadow-md overflow-hidden border-2 border-transparent hover:border-blue-300">
         <div className="aspect-[3/4] relative">
-          <img
+          <Image
             src={preview}
             alt={`Page ${pageNumber}`}
-            className="w-full h-full object-contain bg-gray-50"
+            fill
+            className="object-contain bg-gray-50"
+            sizes="(max-width: 768px) 33vw, (max-width: 1200px) 25vw, 20vw"
           />
           {inRange && (
             <div 
@@ -139,8 +142,6 @@ export default function PDFSplitter() {
   const [splitRanges, setSplitRanges] = useState<SplitRange[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoadingPreviews, setIsLoadingPreviews] = useState(false);
-  const [selectedPages, setSelectedPages] = useState<number[]>([]);
-  const [selectionMode, setSelectionMode] = useState<'single' | 'range'>('range');
   const [numberOfParts, setNumberOfParts] = useState(2);
   const [splitMode, setSplitMode] = useState<'parts' | 'single'>('parts');
   const [loadingStep, setLoadingStep] = useState('');
@@ -207,7 +208,6 @@ export default function PDFSplitter() {
         }
       ];
       setSplitRanges(ranges);
-      setSelectedPages([]);
       
       setLoadingProgress(100);
       
@@ -233,49 +233,6 @@ export default function PDFSplitter() {
     multiple: false,
   });
 
-  const handlePageClick = (pageNumber: number) => {
-    if (selectionMode === 'single') {
-      setSelectedPages([pageNumber]);
-    } else {
-      setSelectedPages(prev => {
-        if (prev.includes(pageNumber)) {
-          return prev.filter(p => p !== pageNumber);
-        } else {
-          return [...prev, pageNumber].sort((a, b) => a - b);
-        }
-      });
-    }
-  };
-
-  const createRangeFromSelection = () => {
-    if (selectedPages.length === 0) return;
-    
-    const sortedPages = [...selectedPages].sort((a, b) => a - b);
-    const newRange: SplitRange = {
-      id: Date.now(),
-      start: sortedPages[0],
-      end: sortedPages[sortedPages.length - 1],
-      name: sortedPages.length === 1 
-        ? `Page ${sortedPages[0]}` 
-        : `Pages ${sortedPages[0]}-${sortedPages[sortedPages.length - 1]}`,
-    };
-
-    setSplitRanges(prev => {
-      // Remove any existing ranges that overlap with the new range
-      const filtered = prev.filter(range => 
-        range.end < newRange.start || range.start > newRange.end
-      );
-      return [...filtered, newRange].sort((a, b) => a.start - b.start);
-    });
-
-    setSelectedPages([]);
-  };
-
-  const clearAllRanges = () => {
-    setSplitRanges([]);
-    setSelectedPages([]);
-  };
-
   const getPageRangeInfo = (pageNumber: number) => {
     const range = splitRanges.find(r => pageNumber >= r.start && pageNumber <= r.end);
     if (!range) return { inRange: false, rangeColor: '', isStart: false, isEnd: false };
@@ -289,27 +246,10 @@ export default function PDFSplitter() {
     };
   };
 
-  const addRange = () => {
-    const lastRange = splitRanges[splitRanges.length - 1];
-    const newStart = lastRange ? lastRange.end + 1 : 1;
-    const newEnd = Math.min(newStart + 10, file?.pageCount || 1);
-    
-    setSplitRanges(prev => [...prev, {
-      id: Date.now(),
-      start: newStart,
-      end: newEnd,
-      name: `Part ${prev.length + 1}`,
-    }]);
-  };
-
   const updateRange = (id: number, field: keyof SplitRange, value: string | number) => {
     setSplitRanges(prev => prev.map(range => 
       range.id === id ? { ...range, [field]: value } : range
     ));
-  };
-
-  const removeRange = (id: number) => {
-    setSplitRanges(prev => prev.filter(range => range.id !== id));
   };
 
   const splitPDF = async () => {

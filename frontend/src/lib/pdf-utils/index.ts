@@ -3,7 +3,7 @@ import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib';
 // Add PDF.js types for page rendering
 declare global {
   interface Window {
-    pdfjsLib: any;
+    pdfjsLib: typeof import('pdfjs-dist');
   }
 }
 

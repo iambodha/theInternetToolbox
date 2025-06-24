@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
+import Image from 'next/image';
 import { PDFUtils, PDFFile } from '@/lib/pdf-utils';
 
 interface LoadingScreenProps {
@@ -139,10 +140,12 @@ function PagePreview({ pageNumber, preview, rotation, onClick }: PagePreviewProp
             className="w-full h-full flex items-center justify-center"
             style={getRotationStyle()}
           >
-            <img
+            <Image
               src={preview}
               alt={`Page ${pageNumber}`}
-              className="max-w-full max-h-full object-contain"
+              fill
+              className="object-contain"
+              sizes="(max-width: 768px) 33vw, (max-width: 1200px) 25vw, 20vw"
             />
           </div>
           {rotation !== 0 && (

@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
+import Image from 'next/image';
 import { PDFUtils, PDFFile } from '@/lib/pdf-utils';
 
 interface LoadingScreenProps {
@@ -86,10 +87,12 @@ function PagePreview({ pageNumber, preview, isSelected, onClick }: PagePreviewPr
     >
       <div className="bg-white rounded-lg shadow-md overflow-hidden border-2 border-transparent hover:border-blue-300">
         <div className="aspect-[3/4] relative">
-          <img
+          <Image
             src={preview}
             alt={`Page ${pageNumber}`}
-            className="w-full h-full object-contain bg-gray-50"
+            fill
+            className="object-contain bg-gray-50"
+            sizes="(max-width: 768px) 33vw, (max-width: 1200px) 25vw, 20vw"
           />
           {isSelected && (
             <div className="absolute inset-0 bg-blue-500 bg-opacity-20 border-2 border-blue-500 border-dashed">
