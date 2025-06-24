@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 export default function Home() {
@@ -227,8 +226,8 @@ export default function Home() {
             </h3>
             <p className="text-lg text-foreground/70 mb-8 leading-relaxed">
               The Internet Toolbox brings together the most useful web tools in one
-              clean, accessible interface. Whether you're a student, professional, or
-              just someone who needs to get things done online, we've got you covered.
+              clean, accessible interface. Whether you&apos;re a student, professional, or
+              just someone who needs to get things done online, we&apos;ve got you covered.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
               <div className="text-center">
