@@ -4,33 +4,17 @@ import { useState } from 'react';
 import PDFMerger from './tools/PDFMerger';
 import PDFSplitter from './tools/PDFSplitter';
 import PDFCompressor from './tools/PDFCompressor';
-import PDFProtector from './tools/PDFProtector';
-import PDFUnlocker from './tools/PDFUnlocker';
-import PDFRotator from './tools/PDFRotator';
-import PDFEditor from './tools/PDFEditor';
-import PDFSigner from './tools/PDFSigner';
+  import PDFRotator from './tools/PDFRotator';
 import PDFWatermark from './tools/PDFWatermark';
 import PDFPageExtractor from './tools/PDFPageExtractor';
 import PDFPageDeleter from './tools/PDFPageDeleter';
-import HTMLToPDF from './tools/HTMLToPDF';
-import ImageToPDF from './tools/ImageToPDF';
-import WordToPDF from './tools/WordToPDF';
-import ExcelToPDF from './tools/ExcelToPDF';
-import PPTToPDF from './tools/PPTToPDF';
-import PDFToImage from './tools/PDFToImage';
-import PDFToWord from './tools/PDFToWord';
-import PDFToExcel from './tools/PDFToExcel';
-import PDFToPPT from './tools/PDFToPPT';
-import PDFToText from './tools/PDFToText';
-import PDFOCRTool from './tools/PDFOCRTool';
-import PDFPageNumbers from './tools/PDFPageNumbers';
 
 interface PDFTool {
   id: string;
   title: string;
   description: string;
   icon: string;
-  category: 'edit' | 'convert' | 'organize' | 'secure';
+  category: 'edit' | 'organize';
   component: React.ComponentType;
 }
 
@@ -42,37 +26,13 @@ const pdfTools: PDFTool[] = [
   { id: 'rotate', title: 'Rotate PDF', description: 'Rotate PDF pages to correct orientation', icon: '🔄', category: 'edit', component: PDFRotator },
   { id: 'extract', title: 'Extract Pages', description: 'Extract specific pages from PDF', icon: '📄', category: 'organize', component: PDFPageExtractor },
   { id: 'delete', title: 'Delete Pages', description: 'Remove unwanted pages from PDF', icon: '🗑️', category: 'organize', component: PDFPageDeleter },
-  { id: 'edit', title: 'Edit PDF', description: 'Add text, images, and annotations to PDF', icon: '✏️', category: 'edit', component: PDFEditor },
   { id: 'watermark', title: 'Add Watermark', description: 'Add text or image watermarks to PDF', icon: '💧', category: 'edit', component: PDFWatermark },
-  { id: 'page-numbers', title: 'Page Numbers', description: 'Add page numbers to PDF documents', icon: '🔢', category: 'edit', component: PDFPageNumbers },
-  
-  // Security Tools
-  { id: 'protect', title: 'Protect PDF', description: 'Add password protection to PDF files', icon: '🔒', category: 'secure', component: PDFProtector },
-  { id: 'unlock', title: 'Unlock PDF', description: 'Remove password protection from PDF', icon: '🔓', category: 'secure', component: PDFUnlocker },
-  { id: 'sign', title: 'Sign PDF', description: 'Add digital signatures to PDF documents', icon: '✍️', category: 'secure', component: PDFSigner },
-  
-  // Conversion Tools - To PDF
-  { id: 'html-to-pdf', title: 'HTML to PDF', description: 'Convert HTML pages and files to PDF', icon: '🌐', category: 'convert', component: HTMLToPDF },
-  { id: 'image-to-pdf', title: 'Image to PDF', description: 'Convert JPG, PNG, TIFF images to PDF', icon: '🖼️', category: 'convert', component: ImageToPDF },
-  { id: 'word-to-pdf', title: 'Word to PDF', description: 'Convert DOCX/DOC files to PDF', icon: '📝', category: 'convert', component: WordToPDF },
-  { id: 'excel-to-pdf', title: 'Excel to PDF', description: 'Convert XLSX/XLS files to PDF', icon: '📊', category: 'convert', component: ExcelToPDF },
-  { id: 'ppt-to-pdf', title: 'PowerPoint to PDF', description: 'Convert PPTX/PPT files to PDF', icon: '📽️', category: 'convert', component: PPTToPDF },
-  
-  // Conversion Tools - From PDF
-  { id: 'pdf-to-image', title: 'PDF to Image', description: 'Convert PDF pages to JPG, PNG images', icon: '🖼️', category: 'convert', component: PDFToImage },
-  { id: 'pdf-to-word', title: 'PDF to Word', description: 'Convert PDF to editable DOCX files', icon: '📝', category: 'convert', component: PDFToWord },
-  { id: 'pdf-to-excel', title: 'PDF to Excel', description: 'Convert PDF tables to XLSX files', icon: '📊', category: 'convert', component: PDFToExcel },
-  { id: 'pdf-to-ppt', title: 'PDF to PowerPoint', description: 'Convert PDF to PPTX presentations', icon: '📽️', category: 'convert', component: PDFToPPT },
-  { id: 'pdf-to-text', title: 'PDF to Text', description: 'Extract text content from PDF files', icon: '📃', category: 'convert', component: PDFToText },
-  { id: 'ocr', title: 'OCR PDF', description: 'Extract text from scanned PDFs using OCR', icon: '👁️', category: 'convert', component: PDFOCRTool },
 ];
 
 const categories = [
   { id: 'all', name: 'All Tools', count: pdfTools.length },
   { id: 'edit', name: 'Edit & Enhance', count: pdfTools.filter(t => t.category === 'edit').length },
   { id: 'organize', name: 'Organize', count: pdfTools.filter(t => t.category === 'organize').length },
-  { id: 'convert', name: 'Convert', count: pdfTools.filter(t => t.category === 'convert').length },
-  { id: 'secure', name: 'Security', count: pdfTools.filter(t => t.category === 'secure').length },
 ];
 
 export default function PDFToolsGrid() {
