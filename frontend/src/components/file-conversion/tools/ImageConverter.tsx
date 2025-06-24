@@ -1,0 +1,197 @@
+'use client';
+
+import { useState, useCallback } from 'react';
+
+const supportedFormats = {
+  input: ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'tiff', 'svg'],
+  output: ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'tiff']
+};
+
+export default function ImageConverter() {
+  const [files, setFiles] = useState<File[]>([]);
+  const [outputFormat, setOutputFormat] = useState<string>('png');
+  const [quality, setQuality] = useState<number>(90);
+  const [isConverting, setIsConverting] = useState(false);
+  const [convertedFiles, setConvertedFiles] = useState<{ name: string; url: string; size: number }[]>([]);
+
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const selectedFiles = Array.from(e.target.files).filter(file => {
+        const extension = file.name.split('.').pop()?.toLowerCase();
+        return extension && supportedFormats.input.includes(extension);
+      });
+      setFiles(selectedFiles);
+      setConvertedFiles([]);
+    }
+  }, []);
+
+  const convertImage = async (file: File): Promise<{ name: string; url: string; size: number }> => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx?.drawImage(img, 0, 0);
+
+        const mimeType = outputFormat === 'jpg' || outputFormat === 'jpeg' ? 'image/jpeg' : `image/${outputFormat}`;
+        const qualityValue = (outputFormat === 'jpg' || outputFormat === 'jpeg' || outputFormat === 'webp') ? quality / 100 : undefined;
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const url = URL.createObjectURL(blob);
+            const name = file.name.replace(/\.[^/.]+$/, `.${outputFormat}`);
+            resolve({ name, url, size: blob.size });
+          }
+        }, mimeType, qualityValue);
+      };
+
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleConvert = async () => {
+    if (files.length === 0) return;
+
+    setIsConverting(true);
+    try {
+      const converted = await Promise.all(files.map(convertImage));
+      setConvertedFiles(converted);
+    } catch (error) {
+      console.error('Conversion failed:', error);
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
+  const downloadFile = (url: string, name: string) => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const downloadAll = () => {
+    convertedFiles.forEach(file => {
+      downloadFile(file.url, file.name);
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* File Upload */}
+      <div className="border-2 border-dashed border-black/[.08] dark:border-white/[.145] rounded-lg p-8 text-center">
+        <input
+          type="file"
+          multiple
+          accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.tiff,.svg"
+          onChange={handleFileChange}
+          className="hidden"
+          id="image-upload"
+        />
+        <label htmlFor="image-upload" className="cursor-pointer">
+          <div className="space-y-4">
+            <div className="text-4xl">🖼️</div>
+            <div>
+              <p className="text-lg font-medium">Click to select images</p>
+              <p className="text-sm text-foreground/60">
+                Supports: JPG, PNG, GIF, BMP, WEBP, TIFF, SVG
+              </p>
+            </div>
+          </div>
+        </label>
+      </div>
+
+      {files.length > 0 && (
+        <>
+          {/* Selected Files */}
+          <div className="space-y-2">
+            <h3 className="font-medium">Selected Files ({files.length})</h3>
+            <div className="space-y-2 max-h-32 overflow-y-auto">
+              {files.map((file, index) => (
+                <div key={index} className="flex items-center justify-between p-2 bg-foreground/5 rounded">
+                  <span className="text-sm">{file.name}</span>
+                  <span className="text-xs text-foreground/60">{(file.size / (1024 * 1024)).toFixed(2)} MB</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Conversion Settings */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Output Format</label>
+              <select
+                value={outputFormat}
+                onChange={(e) => setOutputFormat(e.target.value)}
+                className="w-full p-2 border border-black/[.08] dark:border-white/[.145] rounded bg-background"
+              >
+                {supportedFormats.output.map(format => (
+                  <option key={format} value={format}>{format.toUpperCase()}</option>
+                ))}
+              </select>
+            </div>
+
+            {(outputFormat === 'jpg' || outputFormat === 'jpeg' || outputFormat === 'webp') && (
+              <div>
+                <label className="block text-sm font-medium mb-2">Quality ({quality}%)</label>
+                <input
+                  type="range"
+                  min="10"
+                  max="100"
+                  value={quality}
+                  onChange={(e) => setQuality(parseInt(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Convert Button */}
+          <button
+            onClick={handleConvert}
+            disabled={isConverting}
+            className="w-full py-3 px-4 bg-foreground text-background rounded-lg hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isConverting ? 'Converting...' : `Convert to ${outputFormat.toUpperCase()}`}
+          </button>
+        </>
+      )}
+
+      {/* Converted Files */}
+      {convertedFiles.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium">Converted Files</h3>
+            <button
+              onClick={downloadAll}
+              className="px-4 py-2 bg-foreground text-background rounded hover:bg-foreground/90 transition-colors text-sm"
+            >
+              Download All
+            </button>
+          </div>
+          <div className="space-y-2">
+            {convertedFiles.map((file, index) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-foreground/5 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium">{file.name}</p>
+                  <p className="text-xs text-foreground/60">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                </div>
+                <button
+                  onClick={() => downloadFile(file.url, file.name)}
+                  className="px-3 py-1 bg-foreground text-background rounded text-sm hover:bg-foreground/90 transition-colors"
+                >
+                  Download
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

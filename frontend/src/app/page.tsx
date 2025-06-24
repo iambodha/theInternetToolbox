@@ -19,6 +19,7 @@ export default function Home() {
         "Audio Converter",
         "Video Converter",
       ],
+      href: "/file-conversion",
     },
     {
       title: "File Sharing",
