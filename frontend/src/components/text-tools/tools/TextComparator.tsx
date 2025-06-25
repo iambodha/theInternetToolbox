@@ -152,7 +152,7 @@ export default function TextComparator() {
               ].map(option => (
                 <button
                   key={option.value}
-                  onClick={() => setCompareMode(option.value as any)}
+                  onClick={() => setCompareMode(option.value as 'character' | 'word' | 'line')}
                   className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
                     compareMode === option.value
                       ? 'border-foreground bg-foreground text-background'

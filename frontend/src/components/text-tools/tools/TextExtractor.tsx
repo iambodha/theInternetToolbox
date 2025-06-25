@@ -153,7 +153,7 @@ export default function TextExtractor() {
             className="w-full p-3 border border-foreground/20 rounded-lg bg-background font-mono text-sm focus:outline-none focus:ring-2 focus:ring-foreground/20"
           />
           <div className="text-xs text-foreground/60">
-            Enter a JavaScript regular expression pattern. The 'g' flag will be added automatically.
+            Enter a JavaScript regular expression pattern. The &apos;g&apos; flag will be added automatically.
           </div>
         </div>
       )}

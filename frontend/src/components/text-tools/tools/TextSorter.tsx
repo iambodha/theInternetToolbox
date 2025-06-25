@@ -77,10 +77,6 @@ export default function TextSorter() {
     setSortedText(lines.join('\n'));
   };
 
-  const reverseSortOrder = () => {
-    setSortOrder(sortOrder === 'ascending' ? 'descending' : 'ascending');
-  };
-
   const copyResult = () => {
     navigator.clipboard.writeText(sortedText);
   };
@@ -156,7 +152,7 @@ export default function TextSorter() {
                     name="sortType"
                     value={option.value}
                     checked={sortType === option.value}
-                    onChange={(e) => setSortType(e.target.value as any)}
+                    onChange={(e) => setSortType(e.target.value as 'alphabetical' | 'numerical' | 'length' | 'random')}
                     className="mt-1"
                   />
                   <div>
@@ -180,7 +176,7 @@ export default function TextSorter() {
                       name="sortOrder"
                       value="ascending"
                       checked={sortOrder === 'ascending'}
-                      onChange={(e) => setSortOrder(e.target.value as any)}
+                      onChange={(e) => setSortOrder(e.target.value as 'ascending' | 'descending')}
                     />
                     <span className="text-sm">Ascending (A-Z, 1-9, Short-Long)</span>
                   </label>
@@ -194,7 +190,7 @@ export default function TextSorter() {
                       name="sortOrder"
                       value="descending"
                       checked={sortOrder === 'descending'}
-                      onChange={(e) => setSortOrder(e.target.value as any)}
+                      onChange={(e) => setSortOrder(e.target.value as 'ascending' | 'descending')}
                     />
                     <span className="text-sm">Descending (Z-A, 9-1, Long-Short)</span>
                   </label>

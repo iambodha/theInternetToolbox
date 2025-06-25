@@ -25,7 +25,7 @@ export default function TextConverter() {
       return;
     }
 
-    let lines = inputText.split('\n').filter(line => line.trim());
+    const lines = inputText.split('\n').filter(line => line.trim());
     let result = '';
 
     switch (outputFormat) {
@@ -236,11 +236,11 @@ export default function TextConverter() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
             <div className="font-medium mb-1">JSON Array:</div>
-            <code className="text-xs text-foreground/60">["item1", "item2", "item3"]</code>
+            <code className="text-xs text-foreground/60">[&quot;item1&quot;, &quot;item2&quot;, &quot;item3&quot;]</code>
           </div>
           <div>
             <div className="font-medium mb-1">CSV:</div>
-            <code className="text-xs text-foreground/60">"item1",<br/>"item2",<br/>"item3"</code>
+            <code className="text-xs text-foreground/60">&quot;item1&quot;,<br/>&quot;item2&quot;,<br/>&quot;item3&quot;</code>
           </div>
           <div>
             <div className="font-medium mb-1">HTML List:</div>

@@ -167,7 +167,7 @@ Estimated reading time: ${stats.readingTimeMinutes} minute(s)`;
             <div className="space-y-3">
               <h4 className="font-semibold">Most Frequent Words</h4>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                {stats.topWords.map(([word, count], index) => (
+                {stats.topWords.map(([word, count]) => (
                   <div key={word} className="p-2 bg-foreground/5 rounded text-center">
                     <div className="font-medium text-sm">{word}</div>
                     <div className="text-xs text-foreground/60">{count}×</div>
@@ -182,7 +182,7 @@ Estimated reading time: ${stats.readingTimeMinutes} minute(s)`;
             <div className="space-y-3">
               <h4 className="font-semibold">Most Frequent Letters</h4>
               <div className="grid grid-cols-5 md:grid-cols-10 gap-2">
-                {stats.topChars.map(([char, count], index) => (
+                {stats.topChars.map(([char, count]) => (
                   <div key={char} className="p-2 bg-foreground/5 rounded text-center">
                     <div className="font-medium text-sm uppercase">{char}</div>
                     <div className="text-xs text-foreground/60">{count}</div>

@@ -135,7 +135,7 @@ export default function TextEncoder() {
             break;
         }
       }
-    } catch (error) {
+    } catch {
       result = 'Error: Invalid input for this encoding method';
     }
 

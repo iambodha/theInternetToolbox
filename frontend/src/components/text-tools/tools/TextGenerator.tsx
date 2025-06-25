@@ -79,7 +79,7 @@ export default function TextGenerator() {
       const data = await response.json();
       
       if (data && data.length > 0) {
-        return data.slice(0, count).map((item: any) => item.word);
+        return data.slice(0, count).map((item: { word: string }) => item.word);
       }
       
       // Fallback to another API if first one fails
