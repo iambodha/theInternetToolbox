@@ -1,6 +1,108 @@
+'use client';
+
 import Link from "next/link";
+import { useState, useEffect, useRef } from 'react';
 
 export default function Home() {
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // All available tools with their routes
+  const allTools = [
+    // PDF Tools
+    { name: 'PDF Merger', description: 'Combine multiple PDF files into one', category: 'PDF Tools', route: '/pdf-merger', icon: '🔗' },
+    { name: 'PDF Splitter', description: 'Extract pages from PDF or split into multiple files', category: 'PDF Tools', route: '/pdf-splitter', icon: '✂️' },
+    { name: 'PDF Compressor', description: 'Reduce PDF file size while maintaining quality', category: 'PDF Tools', route: '/pdf-compressor', icon: '🗜️' },
+    { name: 'PDF Rotator', description: 'Rotate PDF pages to correct orientation', category: 'PDF Tools', route: '/pdf-rotator', icon: '🔄' },
+    { name: 'Extract Pages', description: 'Extract specific pages from PDF', category: 'PDF Tools', route: '/pdf-extract-pages', icon: '📄' },
+    { name: 'Delete Pages', description: 'Remove unwanted pages from PDF', category: 'PDF Tools', route: '/pdf-delete-pages', icon: '🗑️' },
+    { name: 'Add Watermark', description: 'Add text or image watermarks to PDF', category: 'PDF Tools', route: '/pdf-watermark', icon: '💧' },
+    
+    // Text Tools
+    { name: 'Text Formatter', description: 'Format and style text content', category: 'Text Tools', route: '/text-formatter', icon: '📝' },
+    { name: 'Text Counter', description: 'Count words, characters, and lines', category: 'Text Tools', route: '/text-counter', icon: '🔢' },
+    { name: 'Text Converter', description: 'Convert text between different formats', category: 'Text Tools', route: '/text-converter', icon: '🔄' },
+    { name: 'Text Generator', description: 'Generate placeholder and sample text', category: 'Text Tools', route: '/text-generator', icon: '✨' },
+    { name: 'Text Analyzer', description: 'Analyze text structure and readability', category: 'Text Tools', route: '/text-analyzer', icon: '📊' },
+    { name: 'Text Cleaner', description: 'Clean and normalize text content', category: 'Text Tools', route: '/text-cleaner', icon: '🧹' },
+    { name: 'Text Comparator', description: 'Compare differences between texts', category: 'Text Tools', route: '/text-comparator', icon: '🔍' },
+    { name: 'Text Encoder', description: 'Encode and decode text in various formats', category: 'Text Tools', route: '/text-encoder', icon: '🔐' },
+    { name: 'Text Extractor', description: 'Extract text from various file formats', category: 'Text Tools', route: '/text-extractor', icon: '📤' },
+    { name: 'Text Sorter', description: 'Sort and organize text content', category: 'Text Tools', route: '/text-sorter', icon: '📋' },
+    
+    // File Conversion Tools
+    { name: 'Image Converter', description: 'Convert between different image formats', category: 'File Conversion', route: '/image-converter', icon: '🖼️' },
+    { name: 'Document Converter', description: 'Convert documents between formats', category: 'File Conversion', route: '/document-converter', icon: '📄' },
+    { name: 'Audio Converter', description: 'Convert audio files to different formats', category: 'File Conversion', route: '/audio-converter', icon: '🎵' },
+    { name: 'Video Converter', description: 'Convert video files to different formats', category: 'File Conversion', route: '/video-converter', icon: '🎬' },
+  ];
+
+  // Filter tools based on search query
+  const filteredTools = searchQuery.trim() === '' 
+    ? allTools 
+    : allTools.filter(tool =>
+        tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tool.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tool.category.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+
+  // Handle keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isSearchOpen) {
+        // Open search with CMD+K or Ctrl+K
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+          e.preventDefault();
+          setIsSearchOpen(true);
+        }
+        return;
+      }
+
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setSelectedIndex(prev => 
+            prev < filteredTools.length - 1 ? prev + 1 : 0
+          );
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setSelectedIndex(prev => 
+            prev > 0 ? prev - 1 : filteredTools.length - 1
+          );
+          break;
+        case 'Enter':
+          e.preventDefault();
+          if (filteredTools[selectedIndex]) {
+            window.location.href = filteredTools[selectedIndex].route;
+          }
+          break;
+        case 'Escape':
+          setIsSearchOpen(false);
+          setSearchQuery('');
+          setSelectedIndex(0);
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isSearchOpen, filteredTools, selectedIndex]);
+
+  // Focus input when search opens
+  useEffect(() => {
+    if (isSearchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isSearchOpen]);
+
+  // Reset selected index when search query changes
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [searchQuery]);
+
   const toolCategories = [
     {
       title: "PDF Tools",
@@ -65,6 +167,81 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Search Overlay */}
+      {isSearchOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center pt-[20vh]">
+          <div className="bg-background border border-foreground/20 rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[60vh] overflow-hidden">
+            {/* Search Input */}
+            <div className="p-4 border-b border-foreground/10">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-foreground/40">🔍</span>
+                </div>
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search for tools... (try &quot;pdf splitter&quot; or &quot;text counter&quot;)"
+                  className="block w-full pl-10 pr-3 py-3 bg-transparent border-0 text-foreground placeholder-foreground/50 focus:ring-0 focus:outline-none text-lg"
+                />
+              </div>
+            </div>
+
+            {/* Search Results */}
+            <div className="max-h-96 overflow-y-auto">
+              {filteredTools.length > 0 ? (
+                <div className="py-2">
+                  {filteredTools.map((tool, index) => (
+                    <button
+                      key={`${tool.category}-${tool.name}`}
+                      onClick={() => window.location.href = tool.route}
+                      className={`w-full text-left px-4 py-3 hover:bg-foreground/5 transition-colors ${
+                        index === selectedIndex ? 'bg-foreground/10' : ''
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <span className="text-xl">{tool.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2">
+                            <h3 className="font-medium text-foreground truncate">{tool.name}</h3>
+                            <span className="text-xs text-foreground/50 bg-foreground/10 px-2 py-1 rounded-full">
+                              {tool.category}
+                            </span>
+                          </div>
+                          <p className="text-sm text-foreground/70 truncate">{tool.description}</p>
+                        </div>
+                        <div className="text-foreground/30">
+                          <span className="text-sm">↗</span>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 text-center">
+                  <div className="text-4xl mb-4">🔍</div>
+                  <h3 className="text-lg font-medium text-foreground mb-2">No tools found</h3>
+                  <p className="text-foreground/60">Try searching for &quot;PDF&quot;, &quot;text&quot;, or &quot;convert&quot;</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-4 py-3 border-t border-foreground/10 bg-foreground/2">
+              <div className="flex items-center justify-between text-xs text-foreground/50">
+                <div className="flex items-center space-x-4">
+                  <span>↑↓ navigate</span>
+                  <span>↵ select</span>
+                  <span>esc close</span>
+                </div>
+                <span>{filteredTools.length} tools</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="border-b border-black/[.08] dark:border-white/[.145]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -108,6 +285,23 @@ export default function Home() {
             needs. Convert files, edit documents, share content, and more—all in one
             place.
           </p>
+          
+          {/* Search Bar */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              className="group relative bg-background border border-foreground/20 rounded-full px-6 py-3 text-left hover:border-foreground/30 transition-all duration-200 w-full max-w-md mx-auto"
+            >
+              <div className="flex items-center space-x-3">
+                <span className="text-foreground/40">🔍</span>
+                <span className="text-foreground/50 flex-1">Search for tools...</span>
+                <kbd className="hidden sm:inline-flex items-center px-2 py-1 border border-foreground/20 rounded text-xs text-foreground/50">
+                  ⌘K
+                </kbd>
+              </div>
+            </button>
+          </div>
+
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
               href="#tools"
