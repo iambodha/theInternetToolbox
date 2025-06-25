@@ -37,6 +37,9 @@ export default function Home() {
     { name: 'Document Converter', description: 'Convert documents between formats', category: 'File Conversion', route: '/document-converter', icon: '📄' },
     { name: 'Audio Converter', description: 'Convert audio files to different formats', category: 'File Conversion', route: '/audio-converter', icon: '🎵' },
     { name: 'Video Converter', description: 'Convert video files to different formats', category: 'File Conversion', route: '/video-converter', icon: '🎬' },
+    
+    // File Corruption Tools
+    { name: 'File Corruptor', description: 'Create corrupted files with custom sizes', category: 'File Corruption', route: '/file-corruptor', icon: '🔧' },
   ];
 
   // Filter tools based on search query
@@ -153,15 +156,16 @@ export default function Home() {
       ],
     },
     {
-      title: "Generators",
-      description: "Create QR codes, passwords, and more",
-      icon: "⚡",
+      title: "File Corruption",
+      description: "Create corrupted files with custom sizes for assignments",
+      icon: "🔧",
       tools: [
-        "QR Generator",
-        "Password Generator",
-        "UUID Generator",
-        "Color Palette",
+        "File Corruptor",
+        "Custom Size Generator",
+        "Assignment Helper",
+        "File Faker",
       ],
+      href: "/file-corruptor",
     },
   ];
 
