@@ -6,8 +6,15 @@ export default function Home() {
       title: "PDF Tools",
       description: "Merge, split, compress, and convert PDF files",
       icon: "📄",
-      tools: ["PDF Merger", "PDF Splitter", "PDF Compressor", "PDF Converter"],
+      tools: ["PDF Merger", "PDF Splitter", "PDF Compressor", "PDF Rotator"],
       href: "/pdf-tools",
+    },
+    {
+      title: "Text Tools",
+      description: "Format, analyze, convert, and process text content",
+      icon: "📝",
+      tools: ["Text Formatter", "Text Counter", "Text Converter", "Text Generator"],
+      href: "/text-tools",
     },
     {
       title: "File Conversion",
@@ -41,17 +48,6 @@ export default function Home() {
         "Resize Tool",
         "Format Converter",
         "Background Remover",
-      ],
-    },
-    {
-      title: "Text Utilities",
-      description: "Process and manipulate text content",
-      icon: "📝",
-      tools: [
-        "Text Editor",
-        "Word Counter",
-        "Case Converter",
-        "Text Formatter",
       ],
     },
     {
