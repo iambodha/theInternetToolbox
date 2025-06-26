@@ -34,8 +34,13 @@ export default function Home() {
     { name: 'Text Extractor', description: 'Extract text from various file formats', category: 'Text Tools', route: '/text-extractor', icon: '📤' },
     { name: 'Text Sorter', description: 'Sort and organize text content', category: 'Text Tools', route: '/text-sorter', icon: '📋' },
     
+    // Image Tools
+    { name: 'Image Converter', description: 'Convert between different image formats', category: 'Image Tools', route: '/image-converter', icon: '🔄' },
+    { name: 'Image Resizer', description: 'Resize images by exact dimensions or percentage', category: 'Image Tools', route: '/image-resizer', icon: '📏' },
+    { name: 'Image Optimizer', description: 'Reduce image file sizes while maintaining quality', category: 'Image Tools', route: '/image-optimizer', icon: '⚡' },
+    { name: 'Background Remover', description: 'Remove backgrounds from images to create transparent PNGs', category: 'Image Tools', route: '/background-remover', icon: '✂️' },
+    
     // File Conversion Tools
-    { name: 'Image Converter', description: 'Convert between different image formats', category: 'File Conversion', route: '/image-converter', icon: '🖼️' },
     { name: 'Document Converter', description: 'Convert documents between formats', category: 'File Conversion', route: '/document-converter', icon: '📄' },
     { name: 'Audio Converter', description: 'Convert audio files to different formats', category: 'File Conversion', route: '/audio-converter', icon: '🎵' },
     { name: 'Video Converter', description: 'Convert video files to different formats', category: 'File Conversion', route: '/video-converter', icon: '🎬' },
@@ -148,14 +153,15 @@ export default function Home() {
     },
     {
       title: "Image Tools",
-      description: "Edit, optimize, and transform images",
+      description: "Edit, optimize, resize, and transform images",
       icon: "🖼️",
       tools: [
+        "Image Converter",
+        "Image Resizer",
         "Image Optimizer",
-        "Resize Tool",
-        "Format Converter",
         "Background Remover",
       ],
+      href: "/image-tools",
     },
     {
       title: "File Corruption",
