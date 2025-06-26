@@ -1,9 +1,11 @@
 'use client';
 
 import Link from "next/link";
+import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 
 export default function Home() {
+  const router = useRouter();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -79,7 +81,7 @@ export default function Home() {
         case 'Enter':
           e.preventDefault();
           if (filteredTools[selectedIndex]) {
-            window.location.href = filteredTools[selectedIndex].route;
+            router.push(filteredTools[selectedIndex].route);
           }
           break;
         case 'Escape':
@@ -92,7 +94,7 @@ export default function Home() {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isSearchOpen, filteredTools, selectedIndex]);
+  }, [isSearchOpen, filteredTools, selectedIndex, router]);
 
   // Focus input when search opens
   useEffect(() => {
@@ -199,7 +201,7 @@ export default function Home() {
                   {filteredTools.map((tool, index) => (
                     <button
                       key={`${tool.category}-${tool.name}`}
-                      onClick={() => window.location.href = tool.route}
+                      onClick={() => router.push(tool.route)}
                       className={`w-full text-left px-4 py-3 hover:bg-foreground/5 transition-colors ${
                         index === selectedIndex ? 'bg-foreground/10' : ''
                       }`}
