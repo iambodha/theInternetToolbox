@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
   },
   // GitHub Pages deployment configuration
   basePath: process.env.GITHUB_ACTIONS ? '/theInternetToolbox' : '',
-  assetPrefix: process.env.GITHUB_ACTIONS ? '/theInternetToolbox/' : '',
+  assetPrefix: process.env.GITHUB_ACTIONS ? '/theInternetToolbox' : '',
 };
 
 export default nextConfig;
