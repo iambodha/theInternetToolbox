@@ -341,6 +341,9 @@ export default function FileCorruptor() {
     generatedFileName: ''
   });
 
+  // Tab state - 'upload' or 'dummy'
+  const [activeTab, setActiveTab] = useState<'upload' | 'dummy'>('upload');
+
   const handleFileSelect = (file: File) => {
     setState(prev => ({ ...prev, selectedFile: file }));
   };
@@ -358,27 +361,146 @@ export default function FileCorruptor() {
   };
 
   const generateCorruptedFile = async () => {
-    if (!state.selectedFileType) return;
+    if (activeTab === 'upload' && !state.selectedFile) return;
+    if (activeTab === 'dummy' && !state.selectedFileType) return;
 
     setState(prev => ({ ...prev, isGenerating: true }));
 
     try {
       const targetSizeBytes = Math.max(1, parseInt(state.targetSize) || 1) * 1024 * 1024; // Convert MB to bytes
-      const corruptedData = new Uint8Array(targetSizeBytes);
-      
-      // Fill with random data to simulate corruption
-      crypto.getRandomValues(corruptedData);
-      
-      // Add file header if available
-      if (state.selectedFileType.header) {
-        for (let i = 0; i < Math.min(state.selectedFileType.header.length, corruptedData.length); i++) {
-          corruptedData[i] = state.selectedFileType.header[i];
+      let corruptedData: Uint8Array;
+      let fileName: string;
+      let mimeType: string;
+
+      // Helper function to generate random data in chunks
+      const generateRandomData = (size: number): Uint8Array => {
+        const data = new Uint8Array(size);
+        const chunkSize = 65536; // 64KB chunks (crypto.getRandomValues limit)
+        
+        for (let i = 0; i < size; i += chunkSize) {
+          const remainingBytes = Math.min(chunkSize, size - i);
+          const chunk = new Uint8Array(remainingBytes);
+          crypto.getRandomValues(chunk);
+          data.set(chunk, i);
         }
+        
+        return data;
+      };
+
+      // Helper function to corrupt existing data
+      const corruptData = (originalData: Uint8Array, corruptionLevel: number = 0.3): Uint8Array => {
+        const corrupted = new Uint8Array(originalData);
+        const bytesToCorrupt = Math.floor(originalData.length * corruptionLevel);
+        
+        // Generate random positions to corrupt
+        const positions = new Set<number>();
+        while (positions.size < bytesToCorrupt) {
+          positions.add(Math.floor(Math.random() * originalData.length));
+        }
+        
+        // Corrupt bytes at random positions
+        positions.forEach(pos => {
+          // Different corruption methods
+          const method = Math.floor(Math.random() * 4);
+          switch (method) {
+            case 0: // Random byte
+              corrupted[pos] = Math.floor(Math.random() * 256);
+              break;
+            case 1: // Bit flip
+              corrupted[pos] ^= (1 << Math.floor(Math.random() * 8));
+              break;
+            case 2: // Zero out
+              corrupted[pos] = 0;
+              break;
+            case 3: // Max value
+              corrupted[pos] = 255;
+              break;
+          }
+        });
+        
+        return corrupted;
+      };
+
+      if (activeTab === 'upload' && state.selectedFile) {
+        // For uploaded files, corrupt the original file
+        const originalData = new Uint8Array(await state.selectedFile.arrayBuffer());
+        
+        if (targetSizeBytes <= originalData.length) {
+          // If target size is smaller or equal, corrupt and truncate
+          const truncatedData = originalData.slice(0, targetSizeBytes);
+          corruptedData = corruptData(truncatedData, 0.4); // Higher corruption for smaller files
+        } else {
+          // If target size is larger, corrupt original and pad with mixed data
+          const corruptedOriginal = corruptData(originalData, 0.3);
+          corruptedData = new Uint8Array(targetSizeBytes);
+          
+          // Copy corrupted original data
+          corruptedData.set(corruptedOriginal);
+          
+          // Fill remaining space with a mix of random data and repeated corrupted segments
+          let offset = corruptedOriginal.length;
+          const remainingSize = targetSizeBytes - offset;
+          
+          // Use 70% random data and 30% repeated corrupted segments
+          const randomSize = Math.floor(remainingSize * 0.7);
+          const repeatedSize = remainingSize - randomSize;
+          
+          // Add random data
+          if (randomSize > 0) {
+            const randomData = generateRandomData(randomSize);
+            corruptedData.set(randomData, offset);
+            offset += randomSize;
+          }
+          
+          // Add repeated corrupted segments
+          if (repeatedSize > 0 && corruptedOriginal.length > 0) {
+            let remaining = repeatedSize;
+            while (remaining > 0) {
+              const chunkSize = Math.min(remaining, corruptedOriginal.length);
+              const chunk = corruptedOriginal.slice(0, chunkSize);
+              // Further corrupt the repeated data
+              const doubleCorrupted = corruptData(chunk, 0.5);
+              corruptedData.set(doubleCorrupted, offset);
+              offset += chunkSize;
+              remaining -= chunkSize;
+            }
+          }
+        }
+        
+        const originalExtension = state.selectedFile.name.split('.').pop() || 'bin';
+        fileName = `corrupted_${state.selectedFile.name.replace(/\.[^/.]+$/, '')}.${originalExtension}`;
+        mimeType = state.selectedFile.type || 'application/octet-stream';
+      } else if (activeTab === 'dummy' && state.selectedFileType) {
+        // For dummy files, create corrupted data with proper headers
+        corruptedData = generateRandomData(targetSizeBytes);
+        
+        // Add file header if available
+        if (state.selectedFileType.header) {
+          for (let i = 0; i < Math.min(state.selectedFileType.header.length, corruptedData.length); i++) {
+            corruptedData[i] = state.selectedFileType.header[i];
+          }
+          
+          // Corrupt some header bytes (but not the first few critical ones)
+          const headerEnd = state.selectedFileType.header.length;
+          if (headerEnd < corruptedData.length) {
+            // Corrupt 20% of the data after header
+            const dataAfterHeader = corruptedData.slice(headerEnd);
+            const corruptedAfterHeader = corruptData(dataAfterHeader, 0.2);
+            corruptedData.set(corruptedAfterHeader, headerEnd);
+          }
+        } else {
+          // If no header, corrupt the random data to make it more realistic
+          corruptedData = corruptData(corruptedData, 0.25);
+        }
+        
+        fileName = `corrupted_dummy_file.${state.selectedFileType.extension}`;
+        mimeType = state.selectedFileType.mimeType;
+      } else {
+        throw new Error('Invalid tab or missing file/file type');
       }
 
-      const blob = new Blob([corruptedData], { type: state.selectedFileType.mimeType });
+      const blob = new Blob([corruptedData], { type: mimeType });
       const downloadUrl = URL.createObjectURL(blob);
-      const fileName = `corrupted_file.${state.selectedFileType.extension}`;
 
       setState(prev => ({
         ...prev,
@@ -417,6 +539,11 @@ export default function FileCorruptor() {
     });
   };
 
+  const handleTabChange = (tab: 'upload' | 'dummy') => {
+    setActiveTab(tab);
+    resetAll(); // Clear state when switching tabs
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -430,7 +557,7 @@ export default function FileCorruptor() {
               </h1>
             </div>
             <p className="text-lg text-foreground/70 max-w-2xl mx-auto">
-              Create corrupted files with custom sizes for testing purposes. Useful for assignments that require specific file sizes.
+              Create corrupted files with custom sizes for testing purposes. Upload existing files or create dummy files from scratch.
             </p>
           </div>
         </div>
@@ -439,144 +566,287 @@ export default function FileCorruptor() {
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="space-y-8">
-          {/* Step 1: File Upload (Optional) */}
-          <div className="bg-foreground/[.02] dark:bg-foreground/[.05] rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4 flex items-center space-x-2">
-              <span className="bg-foreground text-background rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">1</span>
-              <span>Upload Reference File (Optional)</span>
-            </h2>
-            <p className="text-foreground/60 mb-4 text-sm">
-              Upload a file to use as reference, or skip this step to create a file from scratch.
-            </p>
-            <FileUploader
-              file={state.selectedFile}
-              onFileSelect={handleFileSelect}
-              onReset={handleFileReset}
-            />
-          </div>
-
-          {/* Step 2: File Type Selection */}
-          <div className="bg-foreground/[.02] dark:bg-foreground/[.05] rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4 flex items-center space-x-2">
-              <span className="bg-foreground text-background rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">2</span>
-              <span>Select File Type</span>
-            </h2>
-            <FileTypeSelector
-              selectedFileType={state.selectedFileType}
-              onFileTypeSelect={handleFileTypeSelect}
-            />
-          </div>
-
-          {/* Step 3: Size Configuration */}
-          {state.selectedFileType && (
-            <div className="bg-foreground/[.02] dark:bg-foreground/[.05] rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-4 flex items-center space-x-2">
-                <span className="bg-foreground text-background rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">3</span>
-                <span>Set Target File Size</span>
-              </h2>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-4">
-                  <label htmlFor="targetSize" className="text-sm font-medium">
-                    Target Size (MB):
-                  </label>
-                  <input
-                    id="targetSize"
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={state.targetSize}
-                    onChange={handleTargetSizeChange}
-                    className="w-24 px-3 py-2 border border-foreground/20 rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-foreground/20"
-                  />
-                  <span className="text-sm text-foreground/60">MB</span>
-                </div>
-                <p className="text-xs text-foreground/50">
-                  File size will be approximately {state.targetSize} MB ({(parseInt(state.targetSize) * 1024 * 1024).toLocaleString()} bytes)
-                </p>
-              </div>
+          {/* Tab Navigation */}
+          <div className="bg-foreground/[.02] dark:bg-foreground/[.05] rounded-lg p-2">
+            <div className="flex space-x-1">
+              <button
+                onClick={() => handleTabChange('upload')}
+                className={`flex-1 flex items-center justify-center space-x-2 px-6 py-3 rounded-md transition-all font-medium ${
+                  activeTab === 'upload'
+                    ? 'bg-background shadow-sm border border-foreground/10 text-foreground'
+                    : 'hover:bg-foreground/5 text-foreground/70'
+                }`}
+              >
+                <span className="text-xl">📁</span>
+                <span>Upload & Corrupt File</span>
+              </button>
+              <button
+                onClick={() => handleTabChange('dummy')}
+                className={`flex-1 flex items-center justify-center space-x-2 px-6 py-3 rounded-md transition-all font-medium ${
+                  activeTab === 'dummy'
+                    ? 'bg-background shadow-sm border border-foreground/10 text-foreground'
+                    : 'hover:bg-foreground/5 text-foreground/70'
+                }`}
+              >
+                <span className="text-xl">🎭</span>
+                <span>Create Dummy File</span>
+              </button>
             </div>
-          )}
+          </div>
 
-          {/* Step 4: Generate */}
-          {state.selectedFileType && (
-            <div className="bg-foreground/[.02] dark:bg-foreground/[.05] rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-4 flex items-center space-x-2">
-                <span className="bg-foreground text-background rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">4</span>
-                <span>Generate Corrupted File</span>
-              </h2>
-              
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <span className="text-xl">{state.selectedFileType.icon}</span>
-                  <div>
-                    <p className="font-medium">{state.selectedFileType.name}</p>
-                    <p className="text-sm text-foreground/60">
-                      Extension: .{state.selectedFileType.extension} • Size: {state.targetSize} MB
-                    </p>
-                  </div>
+          {/* Tab Content */}
+          <div className="min-h-[600px]">
+            {activeTab === 'upload' ? (
+              /* Upload Tab Content */
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h2 className="text-2xl font-semibold mb-2">Upload & Corrupt File</h2>
+                  <p className="text-foreground/60">
+                    Upload any file and create a corrupted version with your desired size. 
+                    The corrupted file will contain some original data mixed with random data.
+                  </p>
                 </div>
 
-                <div className="flex space-x-3">
-                  <button
-                    onClick={generateCorruptedFile}
-                    disabled={state.isGenerating}
-                    className="px-6 py-3 bg-foreground text-background rounded-lg hover:bg-foreground/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                  >
-                    {state.isGenerating ? (
-                      <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 border-2 border-background/30 border-t-background rounded-full animate-spin"></div>
-                        <span>Generating...</span>
+                {/* File Upload */}
+                <div className="bg-foreground/[.02] dark:bg-foreground/[.05] rounded-lg p-6">
+                  <h3 className="text-lg font-semibold mb-4">Select File</h3>
+                  <FileUploader
+                    file={state.selectedFile}
+                    onFileSelect={handleFileSelect}
+                    onReset={handleFileReset}
+                  />
+                </div>
+
+                {/* Size Configuration */}
+                {state.selectedFile && (
+                  <div className="bg-foreground/[.02] dark:bg-foreground/[.05] rounded-lg p-6">
+                    <h3 className="text-lg font-semibold mb-4">Set Target File Size</h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-4">
+                        <label htmlFor="targetSize" className="text-sm font-medium">
+                          Target Size (MB):
+                        </label>
+                        <input
+                          id="targetSize"
+                          type="number"
+                          min="1"
+                          max="100"
+                          value={state.targetSize}
+                          onChange={handleTargetSizeChange}
+                          className="w-24 px-3 py-2 border border-foreground/20 rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-foreground/20"
+                        />
+                        <span className="text-sm text-foreground/60">MB</span>
                       </div>
-                    ) : (
-                      'Generate Corrupted File'
-                    )}
-                  </button>
+                      <p className="text-xs text-foreground/50">
+                        File size will be approximately {state.targetSize} MB ({(parseInt(state.targetSize) * 1024 * 1024).toLocaleString()} bytes)
+                      </p>
+                      <p className="text-xs text-foreground/50">
+                        Original file: {state.selectedFile.name} ({(state.selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                      </p>
+                    </div>
+                  </div>
+                )}
 
-                  {state.downloadUrl && (
-                    <button
-                      onClick={downloadFile}
-                      className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-                    >
-                      Download File
-                    </button>
-                  )}
+                {/* Generate Button */}
+                {state.selectedFile && (
+                  <div className="bg-foreground/[.02] dark:bg-foreground/[.05] rounded-lg p-6">
+                    <h3 className="text-lg font-semibold mb-4">Generate Corrupted File</h3>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-xl">📁</span>
+                        <div>
+                          <p className="font-medium">Corrupting: {state.selectedFile.name}</p>
+                          <p className="text-sm text-foreground/60">
+                            Original: {(state.selectedFile.size / 1024 / 1024).toFixed(2)} MB → Target: {state.targetSize} MB
+                          </p>
+                        </div>
+                      </div>
 
-                  {(state.selectedFile || state.selectedFileType || state.downloadUrl) && (
-                    <button
-                      onClick={resetAll}
-                      className="px-6 py-3 bg-foreground/10 hover:bg-foreground/20 rounded-lg transition-colors font-medium"
-                    >
-                      Reset All
-                    </button>
-                  )}
-                </div>
+                      <div className="flex space-x-3">
+                        <button
+                          onClick={generateCorruptedFile}
+                          disabled={state.isGenerating}
+                          className="px-6 py-3 bg-foreground text-background rounded-lg hover:bg-foreground/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                        >
+                          {state.isGenerating ? (
+                            <div className="flex items-center space-x-2">
+                              <div className="w-4 h-4 border-2 border-background/30 border-t-background rounded-full animate-spin"></div>
+                              <span>Generating...</span>
+                            </div>
+                          ) : (
+                            'Generate Corrupted File'
+                          )}
+                        </button>
 
-                {state.downloadUrl && (
-                  <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                    <p className="text-green-800 dark:text-green-200 font-medium">
-                      ✅ File generated successfully!
-                    </p>
-                    <p className="text-green-700 dark:text-green-300 text-sm mt-1">
-                      Your corrupted {state.selectedFileType.name} file is ready for download.
-                    </p>
+                        {state.downloadUrl && (
+                          <button
+                            onClick={downloadFile}
+                            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                          >
+                            Download File
+                          </button>
+                        )}
+
+                        <button
+                          onClick={resetAll}
+                          className="px-6 py-3 bg-foreground/10 hover:bg-foreground/20 rounded-lg transition-colors font-medium"
+                        >
+                          Reset
+                        </button>
+                      </div>
+
+                      {state.downloadUrl && (
+                        <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                          <p className="text-green-800 dark:text-green-200 font-medium">
+                            ✅ Corrupted file generated successfully!
+                          </p>
+                          <p className="text-green-700 dark:text-green-300 text-sm mt-1">
+                            Your corrupted file is ready for download.
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
-            </div>
-          )}
+            ) : (
+              /* Dummy Tab Content */
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h2 className="text-2xl font-semibold mb-2">Create Dummy File</h2>
+                  <p className="text-foreground/60">
+                    Generate a dummy corrupted file from scratch. Choose any file type and the file 
+                    will be created with proper headers and random corrupted data.
+                  </p>
+                </div>
+
+                {/* File Type Selection */}
+                <div className="bg-foreground/[.02] dark:bg-foreground/[.05] rounded-lg p-6">
+                  <h3 className="text-lg font-semibold mb-4">Select File Type</h3>
+                  <FileTypeSelector
+                    selectedFileType={state.selectedFileType}
+                    onFileTypeSelect={handleFileTypeSelect}
+                  />
+                </div>
+
+                {/* Size Configuration */}
+                {state.selectedFileType && (
+                  <div className="bg-foreground/[.02] dark:bg-foreground/[.05] rounded-lg p-6">
+                    <h3 className="text-lg font-semibold mb-4">Set Target File Size</h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-4">
+                        <label htmlFor="targetSize" className="text-sm font-medium">
+                          Target Size (MB):
+                        </label>
+                        <input
+                          id="targetSize"
+                          type="number"
+                          min="1"
+                          max="100"
+                          value={state.targetSize}
+                          onChange={handleTargetSizeChange}
+                          className="w-24 px-3 py-2 border border-foreground/20 rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-foreground/20"
+                        />
+                        <span className="text-sm text-foreground/60">MB</span>
+                      </div>
+                      <p className="text-xs text-foreground/50">
+                        File size will be approximately {state.targetSize} MB ({(parseInt(state.targetSize) * 1024 * 1024).toLocaleString()} bytes)
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Generate Button */}
+                {state.selectedFileType && (
+                  <div className="bg-foreground/[.02] dark:bg-foreground/[.05] rounded-lg p-6">
+                    <h3 className="text-lg font-semibold mb-4">Generate Dummy File</h3>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-xl">{state.selectedFileType.icon}</span>
+                        <div>
+                          <p className="font-medium">Creating: {state.selectedFileType.name}</p>
+                          <p className="text-sm text-foreground/60">
+                            Extension: .{state.selectedFileType.extension} • Size: {state.targetSize} MB
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex space-x-3">
+                        <button
+                          onClick={generateCorruptedFile}
+                          disabled={state.isGenerating}
+                          className="px-6 py-3 bg-foreground text-background rounded-lg hover:bg-foreground/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                        >
+                          {state.isGenerating ? (
+                            <div className="flex items-center space-x-2">
+                              <div className="w-4 h-4 border-2 border-background/30 border-t-background rounded-full animate-spin"></div>
+                              <span>Generating...</span>
+                            </div>
+                          ) : (
+                            'Generate Dummy File'
+                          )}
+                        </button>
+
+                        {state.downloadUrl && (
+                          <button
+                            onClick={downloadFile}
+                            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                          >
+                            Download File
+                          </button>
+                        )}
+
+                        <button
+                          onClick={resetAll}
+                          className="px-6 py-3 bg-foreground/10 hover:bg-foreground/20 rounded-lg transition-colors font-medium"
+                        >
+                          Reset
+                        </button>
+                      </div>
+
+                      {state.downloadUrl && (
+                        <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                          <p className="text-green-800 dark:text-green-200 font-medium">
+                            ✅ Dummy file generated successfully!
+                          </p>
+                          <p className="text-green-700 dark:text-green-300 text-sm mt-1">
+                            Your dummy corrupted file is ready for download.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Information */}
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
             <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
               ℹ️ How it works
             </h3>
-            <ul className="text-blue-800 dark:text-blue-200 text-sm space-y-1">
-              <li>• Files are generated with random data and proper file headers when available</li>
-              <li>• The generated file will appear corrupted when opened in normal applications</li>
-              <li>• File size will match your specified target size (±1 byte)</li>
-              <li>• Perfect for assignments requiring specific file sizes</li>
-              <li>• All processing happens locally in your browser</li>
-            </ul>
+            <div className="text-blue-800 dark:text-blue-200 text-sm space-y-2">
+              <div>
+                <p className="font-medium">Upload & Corrupt:</p>
+                <ul className="ml-4 space-y-1">
+                  <li>• Takes your original file and mixes it with random data</li>
+                  <li>• Preserves some original content while corrupting the rest</li>
+                  <li>• Maintains original file extension and basic structure</li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-medium">Create Dummy:</p>
+                <ul className="ml-4 space-y-1">
+                  <li>• Generates entirely new files with proper headers</li>
+                  <li>• Filled with random data to simulate corruption</li>
+                  <li>• Perfect for testing specific file types and sizes</li>
+                </ul>
+              </div>
+              <p className="pt-2">• File size will match your specified target size • All processing happens locally in your browser</p>
+            </div>
           </div>
         </div>
       </main>
