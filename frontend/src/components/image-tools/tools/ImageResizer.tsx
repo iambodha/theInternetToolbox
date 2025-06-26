@@ -2,6 +2,11 @@
 
 import { useState, useCallback } from 'react';
 
+const supportedFormats = {
+  input: ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'tiff'],
+  output: ['jpg', 'jpeg', 'png', 'webp']
+};
+
 export default function ImageResizer() {
   const [files, setFiles] = useState<File[]>([]);
   const [width, setWidth] = useState<number>(800);
@@ -11,11 +16,6 @@ export default function ImageResizer() {
   const [percentage, setPercentage] = useState<number>(50);
   const [isProcessing, setIsProcessing] = useState(false);
   const [resizedFiles, setResizedFiles] = useState<{ name: string; url: string; size: number }[]>([]);
-
-  const supportedFormats = {
-    input: ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'tiff'],
-    output: ['jpg', 'jpeg', 'png', 'webp']
-  };
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {

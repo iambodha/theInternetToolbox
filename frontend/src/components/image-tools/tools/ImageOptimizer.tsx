@@ -2,6 +2,11 @@
 
 import { useState, useCallback } from 'react';
 
+const supportedFormats = {
+  input: ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'tiff'],
+  output: ['auto', 'jpeg', 'png', 'webp']
+};
+
 export default function ImageOptimizer() {
   const [files, setFiles] = useState<File[]>([]);
   const [quality, setQuality] = useState<number>(80);
@@ -11,11 +16,6 @@ export default function ImageOptimizer() {
   const [enableResize, setEnableResize] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [optimizedFiles, setOptimizedFiles] = useState<{ name: string; url: string; size: number; originalSize: number; savings: number }[]>([]);
-
-  const supportedFormats = {
-    input: ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'tiff'],
-    output: ['auto', 'jpeg', 'png', 'webp']
-  };
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {

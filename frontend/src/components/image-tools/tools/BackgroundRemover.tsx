@@ -2,6 +2,11 @@
 
 import { useState, useCallback } from 'react';
 
+const supportedFormats = {
+  input: ['jpg', 'jpeg', 'png', 'bmp', 'webp'],
+  output: ['png'] // Always PNG to support transparency
+};
+
 export default function BackgroundRemover() {
   const [files, setFiles] = useState<File[]>([]);
   const [threshold, setThreshold] = useState<number>(20);
@@ -9,11 +14,6 @@ export default function BackgroundRemover() {
   const [removeMode, setRemoveMode] = useState<'white' | 'color' | 'auto'>('auto');
   const [isProcessing, setIsProcessing] = useState(false);
   const [processedFiles, setProcessedFiles] = useState<{ name: string; url: string; size: number }[]>([]);
-
-  const supportedFormats = {
-    input: ['jpg', 'jpeg', 'png', 'bmp', 'webp'],
-    output: ['png'] // Always PNG to support transparency
-  };
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
