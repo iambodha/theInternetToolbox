@@ -21,7 +21,7 @@ export default function FileConversionHeader() {
             <Link href="/" className="text-sm hover:text-foreground/80 transition-colors">
               Home
             </Link>
-            <Link href="#tools" className="text-sm hover:text-foreground/80 transition-colors">
+            <Link href="/#tools" className="text-sm hover:text-foreground/80 transition-colors">
               All Tools
             </Link>
           </nav>
