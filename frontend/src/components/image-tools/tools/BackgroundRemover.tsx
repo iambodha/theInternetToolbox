@@ -160,7 +160,7 @@ export default function BackgroundRemover() {
   return (
     <div className="space-y-6">
       {/* File Upload */}
-      <div className="border-2 border-dashed border-black/[.08] dark:border-white/[.145] rounded-lg p-8 text-center">
+      <div className="border-2 border-dashed border-foreground/20 hover:border-foreground/30 rounded-lg p-8 text-center cursor-pointer transition-colors">
         <input
           type="file"
           multiple
@@ -173,9 +173,9 @@ export default function BackgroundRemover() {
           <div className="space-y-4">
             <div className="text-4xl">🖼️</div>
             <div>
-              <p className="text-lg font-medium">Click to select images</p>
+              <p className="text-lg font-medium mb-2">Drag & drop images here</p>
               <p className="text-sm text-foreground/60">
-                Supports: JPG, PNG, BMP, WEBP
+                or click to select files • Supports: JPG, PNG, BMP, WEBP
               </p>
             </div>
           </div>
@@ -201,53 +201,27 @@ export default function BackgroundRemover() {
           <div className="space-y-4">
             <h3 className="font-medium">Background Removal Settings</h3>
             
-            {/* Remove Mode */}
-            <div>
-              <label className="block text-sm font-medium mb-2">Removal Mode</label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <button
-                  onClick={() => setRemoveMode('auto')}
-                  className={`p-3 rounded-lg border text-left transition-all ${
-                    removeMode === 'auto'
-                      ? 'border-foreground bg-foreground/5'
-                      : 'border-black/[.08] dark:border-white/[.145] hover:border-black/[.15] dark:hover:border-white/[.25]'
-                  }`}
-                >
-                  <div className="font-medium text-sm">Auto Detect</div>
-                  <div className="text-xs text-foreground/60 mt-1">Automatically detect background</div>
-                </button>
-                <button
-                  onClick={() => setRemoveMode('white')}
-                  className={`p-3 rounded-lg border text-left transition-all ${
-                    removeMode === 'white'
-                      ? 'border-foreground bg-foreground/5'
-                      : 'border-black/[.08] dark:border-white/[.145] hover:border-black/[.15] dark:hover:border-white/[.25]'
-                  }`}
-                >
-                  <div className="font-medium text-sm">White Background</div>
-                  <div className="text-xs text-foreground/60 mt-1">Remove white/light backgrounds</div>
-                </button>
-                <button
-                  onClick={() => setRemoveMode('color')}
-                  className={`p-3 rounded-lg border text-left transition-all ${
-                    removeMode === 'color'
-                      ? 'border-foreground bg-foreground/5'
-                      : 'border-black/[.08] dark:border-white/[.145] hover:border-black/[.15] dark:hover:border-white/[.25]'
-                  }`}
-                >
-                  <div className="font-medium text-sm">Custom Color</div>
-                  <div className="text-xs text-foreground/60 mt-1">Remove specific color</div>
-                </button>
-              </div>
-            </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Removal Mode */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Removal Mode</label>
+                <select
+                  value={removeMode}
+                  onChange={(e) => setRemoveMode(e.target.value as 'white' | 'color' | 'auto')}
+                  className="w-full p-2 border border-foreground/20 rounded bg-background"
+                >
+                  <option value="auto">Auto Detection</option>
+                  <option value="white">Remove White Background</option>
+                  <option value="color">Remove Specific Color</option>
+                </select>
+              </div>
+
               {/* Threshold */}
               <div>
-                <label className="block text-sm font-medium mb-2">Sensitivity ({threshold})</label>
+                <label className="block text-sm font-medium mb-2">Threshold ({threshold})</label>
                 <input
                   type="range"
-                  min="5"
+                  min="1"
                   max="100"
                   value={threshold}
                   onChange={(e) => setThreshold(parseInt(e.target.value))}
@@ -269,13 +243,13 @@ export default function BackgroundRemover() {
                       type="color"
                       value={targetColor}
                       onChange={(e) => setTargetColor(e.target.value)}
-                      className="w-12 h-10 rounded border border-black/[.08] dark:border-white/[.145]"
+                      className="w-12 h-10 rounded border border-foreground/20"
                     />
                     <input
                       type="text"
                       value={targetColor}
                       onChange={(e) => setTargetColor(e.target.value)}
-                      className="flex-1 p-2 border border-black/[.08] dark:border-white/[.145] rounded bg-background text-sm"
+                      className="flex-1 p-2 border border-foreground/20 rounded bg-background text-sm"
                       placeholder="#ffffff"
                     />
                   </div>

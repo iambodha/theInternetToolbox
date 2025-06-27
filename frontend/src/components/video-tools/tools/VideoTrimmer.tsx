@@ -390,7 +390,7 @@ export default function VideoTrimmer() {
   return (
     <div className="space-y-6">
       {/* File Upload */}
-      <div className="border-2 border-dashed border-black/[.08] dark:border-white/[.145] rounded-lg p-8 text-center">
+      <div className="border-2 border-dashed border-foreground/20 hover:border-foreground/30 rounded-lg p-8 text-center cursor-pointer transition-colors">
         <input
           type="file"
           accept="video/*"
@@ -402,9 +402,9 @@ export default function VideoTrimmer() {
           <div className="space-y-4">
             <div className="text-4xl">✂️</div>
             <div>
-              <p className="text-lg font-medium">Click to select a video</p>
+              <p className="text-lg font-medium mb-2">Drag & drop a video here</p>
               <p className="text-sm text-foreground/60">
-                Cut and trim video segments to exact timestamps
+                or click to select a file • Supports all video formats
               </p>
             </div>
           </div>
@@ -446,23 +446,19 @@ export default function VideoTrimmer() {
             {/* Video Timeline */}
             <div className="p-4 bg-foreground/5 rounded-lg">
               <div className="space-y-4">
-                <div className="flex items-center justify-between text-sm">
-                  <span>Original Duration: {formatDuration(videoMetadata.duration)}</span>
-                  <span>Trimmed Duration: {formatDuration(trimDuration)}</span>
-                </div>
-
-                {/* Timeline visualization */}
-                <div className="relative h-8 bg-gray-200 dark:bg-gray-700 rounded">
+                <div className="text-sm font-medium">Video Timeline</div>
+                <div className="relative h-2 bg-foreground/10 rounded-full">
                   <div
-                    className="absolute h-full bg-blue-500 rounded"
+                    className="absolute h-full bg-blue-500 rounded-full"
                     style={{
                       left: `${(startTime / videoMetadata.duration) * 100}%`,
-                      width: `${(trimDuration / videoMetadata.duration) * 100}%`
+                      width: `${((endTime - startTime) / videoMetadata.duration) * 100}%`
                     }}
                   />
-                  <div className="absolute inset-0 flex items-center justify-center text-xs text-white font-medium">
-                    Selected: {formatDuration(startTime)} - {formatDuration(endTime)}
-                  </div>
+                </div>
+                <div className="flex justify-between text-xs text-foreground/60">
+                  <span>0:00</span>
+                  <span>{formatDuration(videoMetadata.duration)}</span>
                 </div>
               </div>
             </div>
@@ -513,71 +509,50 @@ export default function VideoTrimmer() {
                 }}
                 className="w-full"
               />
-              <div className="flex justify-between text-xs text-foreground/60">
-                <span>0:00</span>
-                <span>{formatDuration(videoMetadata.duration)}</span>
+            </div>
+
+            {/* Trim Duration */}
+            <div className="space-y-2">
+              <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-blue-700 dark:text-blue-300">Trim Duration:</span>
+                  <span className="font-medium text-blue-900 dark:text-blue-100">{formatDuration(trimDuration)}</span>
+                </div>
               </div>
             </div>
 
-            {/* Quick presets */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium">Quick Actions</label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            {/* Quick Presets */}
+            <div className="p-3 bg-foreground/5 border border-foreground/10 rounded-lg">
+              <div className="text-sm font-medium mb-2">Quick Actions:</div>
+              <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => {
                     setStartTime(0);
                     setEndTime(Math.min(30, videoMetadata.duration));
                   }}
-                  className="px-3 py-2 text-xs border border-foreground/20 rounded hover:bg-foreground/5 transition-colors"
+                  className="px-3 py-1 bg-foreground/10 hover:bg-foreground/20 text-foreground rounded text-xs transition-colors"
                 >
                   First 30s
+                </button>
+                <button
+                  onClick={() => {
+                    const mid = videoMetadata.duration / 2;
+                    setStartTime(Math.max(0, mid - 15));
+                    setEndTime(Math.min(videoMetadata.duration, mid + 15));
+                  }}
+                  className="px-3 py-1 bg-foreground/10 hover:bg-foreground/20 text-foreground rounded text-xs transition-colors"
+                >
+                  Middle 30s
                 </button>
                 <button
                   onClick={() => {
                     setStartTime(Math.max(0, videoMetadata.duration - 30));
                     setEndTime(videoMetadata.duration);
                   }}
-                  className="px-3 py-2 text-xs border border-foreground/20 rounded hover:bg-foreground/5 transition-colors"
+                  className="px-3 py-1 bg-foreground/10 hover:bg-foreground/20 text-foreground rounded text-xs transition-colors"
                 >
                   Last 30s
                 </button>
-                <button
-                  onClick={() => {
-                    const quarter = videoMetadata.duration / 4;
-                    setStartTime(quarter);
-                    setEndTime(quarter * 3);
-                  }}
-                  className="px-3 py-2 text-xs border border-foreground/20 rounded hover:bg-foreground/5 transition-colors"
-                >
-                  Middle 50%
-                </button>
-                <button
-                  onClick={() => {
-                    setStartTime(0);
-                    setEndTime(videoMetadata.duration);
-                  }}
-                  className="px-3 py-2 text-xs border border-foreground/20 rounded hover:bg-foreground/5 transition-colors"
-                >
-                  Reset
-                </button>
-              </div>
-            </div>
-
-            {/* Duration info */}
-            <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-blue-700 dark:text-blue-300">Original:</span>
-                  <span className="font-medium text-blue-900 dark:text-blue-100 ml-2">
-                    {formatDuration(videoMetadata.duration)}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-blue-700 dark:text-blue-300">Trimmed:</span>
-                  <span className="font-medium text-blue-900 dark:text-blue-100 ml-2">
-                    {formatDuration(trimDuration)}
-                  </span>
-                </div>
               </div>
             </div>
           </div>

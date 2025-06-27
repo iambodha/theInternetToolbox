@@ -195,7 +195,7 @@ export default function VideoWatermark() {
   return (
     <div className="space-y-6">
       {/* File Upload */}
-      <div className="border-2 border-dashed border-black/[.08] dark:border-white/[.145] rounded-lg p-8 text-center">
+      <div className="border-2 border-dashed border-foreground/20 hover:border-foreground/30 rounded-lg p-8 text-center cursor-pointer transition-colors">
         <input
           type="file"
           accept="video/*"
@@ -207,9 +207,9 @@ export default function VideoWatermark() {
           <div className="space-y-4">
             <div className="text-4xl">💧</div>
             <div>
-              <p className="text-lg font-medium">Click to select a video</p>
+              <p className="text-lg font-medium mb-2">Drag & drop a video here</p>
               <p className="text-sm text-foreground/60">
-                Add text watermarks to protect your videos
+                or click to select a file • Add text watermarks to protect your videos
               </p>
             </div>
           </div>
@@ -256,7 +256,7 @@ export default function VideoWatermark() {
                 value={watermarkText}
                 onChange={(e) => setWatermarkText(e.target.value)}
                 placeholder="Enter your watermark text..."
-                className="w-full p-3 border border-black/[.08] dark:border-white/[.145] rounded-lg bg-background"
+                className="w-full p-3 border border-foreground/20 rounded-lg bg-background"
               />
             </div>
 
@@ -314,13 +314,13 @@ export default function VideoWatermark() {
                     type="color"
                     value={watermarkColor}
                     onChange={(e) => setWatermarkColor(e.target.value)}
-                    className="w-12 h-10 border border-black/[.08] dark:border-white/[.145] rounded"
+                    className="w-12 h-10 border border-foreground/20 rounded"
                   />
                   <input
                     type="text"
                     value={watermarkColor}
                     onChange={(e) => setWatermarkColor(e.target.value)}
-                    className="flex-1 p-2 border border-black/[.08] dark:border-white/[.145] rounded bg-background text-sm"
+                    className="flex-1 p-2 border border-foreground/20 rounded bg-background text-sm"
                   />
                 </div>
               </div>

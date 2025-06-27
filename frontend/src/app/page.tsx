@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
+import ThemeToggle from '@/components/ui/ThemeToggle';
 
 export default function Home() {
   const router = useRouter();
@@ -277,19 +278,22 @@ export default function Home() {
                 The Internet Toolbox
               </h1>
             </div>
-            <nav className="hidden md:flex space-x-6">
-              <a
-                href="#tools"
-                className="text-sm hover:text-foreground/80 transition-colors"
-              >
-                Tools
-              </a>
-              <a
-                href="#about"
-                className="text-sm hover:text-foreground/80 transition-colors"
-              >
-                About
-              </a>
+            <nav className="flex items-center space-x-4">
+              <div className="hidden md:flex space-x-6">
+                <a
+                  href="#tools"
+                  className="text-sm hover:text-foreground/80 transition-colors"
+                >
+                  Tools
+                </a>
+                <a
+                  href="#about"
+                  className="text-sm hover:text-foreground/80 transition-colors"
+                >
+                  About
+                </a>
+              </div>
+              <ThemeToggle />
             </nav>
           </div>
         </div>

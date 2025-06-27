@@ -129,7 +129,7 @@ export default function ImageOptimizer() {
   return (
     <div className="space-y-6">
       {/* File Upload */}
-      <div className="border-2 border-dashed border-black/[.08] dark:border-white/[.145] rounded-lg p-8 text-center">
+      <div className="border-2 border-dashed border-foreground/20 hover:border-foreground/30 rounded-lg p-8 text-center cursor-pointer transition-colors">
         <input
           type="file"
           multiple
@@ -142,9 +142,9 @@ export default function ImageOptimizer() {
           <div className="space-y-4">
             <div className="text-4xl">⚡</div>
             <div>
-              <p className="text-lg font-medium">Click to select images</p>
+              <p className="text-lg font-medium mb-2">Drag & drop images here</p>
               <p className="text-sm text-foreground/60">
-                Supports: JPG, PNG, GIF, BMP, WEBP, TIFF
+                or click to select files • Supports: JPG, PNG, GIF, BMP, WEBP, TIFF
               </p>
             </div>
           </div>
@@ -176,7 +176,7 @@ export default function ImageOptimizer() {
                 <select
                   value={outputFormat}
                   onChange={(e) => setOutputFormat(e.target.value)}
-                  className="w-full p-2 border border-black/[.08] dark:border-white/[.145] rounded bg-background"
+                  className="w-full p-2 border border-foreground/20 rounded bg-background"
                 >
                   <option value="auto">Auto (Recommended)</option>
                   <option value="jpeg">JPEG</option>
@@ -223,7 +223,7 @@ export default function ImageOptimizer() {
                       type="number"
                       value={maxWidth}
                       onChange={(e) => setMaxWidth(parseInt(e.target.value) || 1920)}
-                      className="w-full p-2 border border-black/[.08] dark:border-white/[.145] rounded bg-background"
+                      className="w-full p-2 border border-foreground/20 rounded bg-background"
                       min="100"
                       max="4000"
                     />
@@ -234,7 +234,7 @@ export default function ImageOptimizer() {
                       type="number"
                       value={maxHeight}
                       onChange={(e) => setMaxHeight(parseInt(e.target.value) || 1080)}
-                      className="w-full p-2 border border-black/[.08] dark:border-white/[.145] rounded bg-background"
+                      className="w-full p-2 border border-foreground/20 rounded bg-background"
                       min="100"
                       max="4000"
                     />

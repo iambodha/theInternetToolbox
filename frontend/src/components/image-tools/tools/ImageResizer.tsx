@@ -136,7 +136,7 @@ export default function ImageResizer() {
   return (
     <div className="space-y-6">
       {/* File Upload */}
-      <div className="border-2 border-dashed border-black/[.08] dark:border-white/[.145] rounded-lg p-8 text-center">
+      <div className="border-2 border-dashed border-foreground/20 hover:border-foreground/30 rounded-lg p-8 text-center cursor-pointer transition-colors">
         <input
           type="file"
           multiple
@@ -149,9 +149,9 @@ export default function ImageResizer() {
           <div className="space-y-4">
             <div className="text-4xl">📏</div>
             <div>
-              <p className="text-lg font-medium">Click to select images</p>
+              <p className="text-lg font-medium mb-2">Drag & drop images here</p>
               <p className="text-sm text-foreground/60">
-                Supports: JPG, PNG, GIF, BMP, WEBP, TIFF
+                or click to select files • Supports: JPG, PNG, GIF, BMP, WEBP, TIFF
               </p>
             </div>
           </div>
@@ -209,7 +209,7 @@ export default function ImageResizer() {
                     type="number"
                     value={width}
                     onChange={(e) => updateHeightFromWidth(parseInt(e.target.value) || 800)}
-                    className="w-full p-2 border border-black/[.08] dark:border-white/[.145] rounded bg-background"
+                    className="w-full p-2 border border-foreground/20 rounded bg-background"
                     min="1"
                     max="10000"
                   />
@@ -220,7 +220,7 @@ export default function ImageResizer() {
                     type="number"
                     value={height}
                     onChange={(e) => updateWidthFromHeight(parseInt(e.target.value) || 600)}
-                    className="w-full p-2 border border-black/[.08] dark:border-white/[.145] rounded bg-background"
+                    className="w-full p-2 border border-foreground/20 rounded bg-background"
                     min="1"
                     max="10000"
                   />

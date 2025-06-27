@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { Button } from '@/components/ui/Button';
+import { styles } from '@/lib/styles';
 
 interface ConversionOption {
   format: string;
@@ -349,9 +351,9 @@ export default function FileConversionGrid() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className={styles.spacing.section}>
       {/* File Upload */}
-      <div className="border-2 border-dashed border-black/[.08] dark:border-white/[.145] rounded-lg p-8 text-center">
+      <div className="border-2 border-dashed border-foreground/20 hover:border-foreground/30 rounded-lg p-8 text-center cursor-pointer transition-colors">
         <input
           type="file"
           multiple
@@ -364,9 +366,9 @@ export default function FileConversionGrid() {
           <div className="space-y-4">
             <div className="text-4xl">📁</div>
             <div>
-              <p className="text-lg font-medium">Drop files here or click to select</p>
+              <p className="text-lg font-medium mb-2">Drag & drop files here</p>
               <p className="text-sm text-foreground/60">
-                Supports images, documents, audio, and video files
+                or click to select files • Supports images, documents, audio, and video files
               </p>
             </div>
           </div>
@@ -375,26 +377,26 @@ export default function FileConversionGrid() {
 
       {/* File Conversion Options */}
       {filesWithOptions.length > 0 && (
-        <div className="space-y-6">
-          <h3 className="text-xl font-semibold">Convert Your Files</h3>
+        <div className={styles.spacing.section}>
+          <h3 className={`${styles.text.xl} font-semibold`}>Convert Your Files</h3>
           
           {filesWithOptions.map((fileData, index) => (
-            <div key={index} className="border border-black/[.08] dark:border-white/[.145] rounded-lg p-6">
+            <div key={index} className={`${styles.card.base.replace('cursor-pointer', '')} ${styles.card.content}`}>
               {/* File Info */}
-              <div className="flex items-center space-x-3 mb-4">
-                <span className="text-2xl">{categoryIcons[fileData.category]}</span>
+              <div className={styles.card.header}>
+                <span className={styles.card.icon}>{categoryIcons[fileData.category]}</span>
                 <div>
                   <h4 className="font-medium">{fileData.file.name}</h4>
-                  <p className="text-sm text-foreground/60">
+                  <p className={`${styles.text.sm} ${styles.text.subtle}`}>
                     {categoryNames[fileData.category]} • {fileData.inputFormat.toUpperCase()} • {(fileData.file.size / (1024 * 1024)).toFixed(2)} MB
                   </p>
                 </div>
               </div>
 
               {/* Conversion Options */}
-              <div className="space-y-4">
+              <div className={styles.spacing.group}>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Convert to:</label>
+                  <label className={styles.form.label}>Convert to:</label>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     {fileData.availableFormats.map((format) => (
                       <button
@@ -403,12 +405,12 @@ export default function FileConversionGrid() {
                         className={`p-3 rounded-lg border text-left transition-all ${
                           selectedConversions[index] === format.format
                             ? 'border-foreground bg-foreground/5'
-                            : 'border-black/[.08] dark:border-white/[.145] hover:border-black/[.15] dark:hover:border-white/[.25]'
+                            : 'border-foreground/20 hover:border-foreground/30'
                         }`}
                       >
-                        <div className="font-medium text-sm">{format.label}</div>
+                        <div className={`font-medium ${styles.text.sm}`}>{format.label}</div>
                         {format.description && (
-                          <div className="text-xs text-foreground/60 mt-1">{format.description}</div>
+                          <div className={`${styles.text.xs} ${styles.text.subtle} mt-1`}>{format.description}</div>
                         )}
                       </button>
                     ))}
@@ -420,7 +422,7 @@ export default function FileConversionGrid() {
                  fileData.category === 'image' && 
                  ['jpg', 'jpeg', 'webp'].includes(selectedConversions[index]) && (
                   <div>
-                    <label className="block text-sm font-medium mb-2">
+                    <label className={styles.form.label}>
                       Quality ({conversionSettings[index]?.quality || 90}%)
                     </label>
                     <input
@@ -441,16 +443,14 @@ export default function FileConversionGrid() {
                 {selectedConversions[index] && 
                  fileData.category === 'video' && (
                   <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Quality
-                    </label>
+                    <label className={styles.form.label}>Quality</label>
                     <select
                       value={conversionSettings[index]?.quality || 'medium'}
                       onChange={(e) => setConversionSettings(prev => ({
                         ...prev,
                         [index]: { ...prev[index], quality: e.target.value }
                       }))}
-                      className="w-full border rounded-lg p-2 text-sm"
+                      className="w-full p-2 border border-foreground/20 rounded bg-background"
                     >
                       <option value="low">Low</option>
                       <option value="medium">Medium</option>
@@ -462,21 +462,21 @@ export default function FileConversionGrid() {
                 {/* Convert Button */}
                 {selectedConversions[index] && (
                   <div className="flex items-center space-x-3">
-                    <button
+                    <Button
                       onClick={() => handleConversion(index)}
                       disabled={isConverting}
-                      className="px-6 py-2 bg-foreground text-background rounded-lg hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      variant="primary"
                     >
                       {isConverting ? 'Converting...' : `Convert to ${selectedConversions[index].toUpperCase()}`}
-                    </button>
+                    </Button>
                     
                     {convertedFiles[index] && (
-                      <button
+                      <Button
                         onClick={() => downloadFile(convertedFiles[index].url, convertedFiles[index].name)}
-                        className="px-4 py-2 border border-foreground rounded-lg hover:bg-foreground/5 transition-colors"
+                        variant="secondary"
                       >
                         Download {convertedFiles[index].name}
-                      </button>
+                      </Button>
                     )}
                   </div>
                 )}
@@ -485,42 +485,6 @@ export default function FileConversionGrid() {
           ))}
         </div>
       )}
-
-      {/* Features Section */}
-      <div className="bg-foreground/[.02] dark:bg-foreground/[.05] rounded-lg p-8">
-        <h3 className="text-2xl font-bold font-[family-name:var(--font-geist-sans)] text-center mb-8">
-          Smart File Conversion
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="text-center">
-            <div className="w-12 h-12 bg-foreground/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-xl">🎯</span>
-            </div>
-            <h4 className="font-semibold mb-2">Auto-Detection</h4>
-            <p className="text-sm text-foreground/60">
-              Automatically detects file types and shows relevant conversion options
-            </p>
-          </div>
-          <div className="text-center">
-            <div className="w-12 h-12 bg-foreground/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-xl">⚡</span>
-            </div>
-            <h4 className="font-semibold mb-2">Instant Preview</h4>
-            <p className="text-sm text-foreground/60">
-              See all available formats immediately after uploading your files
-            </p>
-          </div>
-          <div className="text-center">
-            <div className="w-12 h-12 bg-foreground/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-xl">🔧</span>
-            </div>
-            <h4 className="font-semibold mb-2">Quality Control</h4>
-            <p className="text-sm text-foreground/60">
-              Customize quality and compression settings for optimal results
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

@@ -293,7 +293,7 @@ export default function VideoFrameExtractor() {
   return (
     <div className="space-y-6">
       {/* File Upload */}
-      <div className="border-2 border-dashed border-black/[.08] dark:border-white/[.145] rounded-lg p-8 text-center">
+      <div className="border-2 border-dashed border-foreground/20 hover:border-foreground/30 rounded-lg p-8 text-center cursor-pointer transition-colors">
         <input
           type="file"
           accept="video/*"
@@ -305,9 +305,9 @@ export default function VideoFrameExtractor() {
           <div className="space-y-4">
             <div className="text-4xl">🖼️</div>
             <div>
-              <p className="text-lg font-medium">Click to select a video</p>
+              <p className="text-lg font-medium mb-2">Drag & drop a video here</p>
               <p className="text-sm text-foreground/60">
-                Extract frames as PNG or JPEG images
+                or click to select a file • Extract frames as PNG or JPEG images
               </p>
             </div>
           </div>
@@ -436,7 +436,7 @@ export default function VideoFrameExtractor() {
                 <select
                   value={imageFormat}
                   onChange={(e) => setImageFormat(e.target.value as 'png' | 'jpg')}
-                  className="w-full p-2 border border-black/[.08] dark:border-white/[.145] rounded bg-background"
+                  className="w-full p-2 border border-foreground/20 rounded bg-background"
                 >
                   <option value="png">PNG (Lossless)</option>
                   <option value="jpg">JPEG (Smaller file size)</option>

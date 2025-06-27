@@ -825,10 +825,10 @@ export default function FileCorruptor() {
 
           {/* Information */}
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
-            <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+            <h3 className="font-semibold text-foreground mb-2">
               ℹ️ How it works
             </h3>
-            <div className="text-blue-800 dark:text-blue-200 text-sm space-y-2">
+            <div className="text-foreground text-sm space-y-2">
               <div>
                 <p className="font-medium">Upload & Corrupt:</p>
                 <ul className="ml-4 space-y-1">

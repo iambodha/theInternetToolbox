@@ -1,10 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { FilterButton, BackButton } from '@/components/ui/Button';
+import { ToolCard, ToolGrid, FilterGrid } from '@/components/ui/Card';
+import { styles } from '@/lib/styles';
 import PDFMerger from './tools/PDFMerger';
 import PDFSplitter from './tools/PDFSplitter';
 import PDFCompressor from './tools/PDFCompressor';
-  import PDFRotator from './tools/PDFRotator';
+import PDFRotator from './tools/PDFRotator';
 import PDFWatermark from './tools/PDFWatermark';
 import PDFPageExtractor from './tools/PDFPageExtractor';
 import PDFPageDeleter from './tools/PDFPageDeleter';
@@ -48,22 +51,16 @@ export default function PDFToolsGrid() {
   if (selectedTool && selectedToolData) {
     const ToolComponent = selectedToolData.component;
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => setSelectedTool(null)}
-            className="flex items-center space-x-2 text-foreground/60 hover:text-foreground transition-colors"
-          >
-            <span>←</span>
-            <span>Back to PDF Tools</span>
-          </button>
-        </div>
+      <div className={styles.spacing.section}>
+        <BackButton onClick={() => setSelectedTool(null)}>
+          Back to PDF Tools
+        </BackButton>
         <div className="bg-foreground/[.02] dark:bg-foreground/[.05] rounded-lg p-6">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold font-[family-name:var(--font-geist-sans)] mb-2">
+            <h2 className={`${styles.text['2xl']} font-bold ${styles.text.heading} mb-2`}>
               {selectedToolData.icon} {selectedToolData.title}
             </h2>
-            <p className="text-foreground/70">{selectedToolData.description}</p>
+            <p className={styles.text.muted}>{selectedToolData.description}</p>
           </div>
           <ToolComponent />
         </div>
@@ -72,51 +69,33 @@ export default function PDFToolsGrid() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className={styles.spacing.section}>
       {/* Category Filter */}
-      <div className="flex flex-wrap gap-2 justify-center">
+      <FilterGrid>
         {categories.map((category) => (
-          <button
+          <FilterButton
             key={category.id}
+            active={selectedCategory === category.id}
             onClick={() => setSelectedCategory(category.id)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              selectedCategory === category.id
-                ? 'bg-foreground text-background'
-                : 'bg-foreground/5 text-foreground/70 hover:bg-foreground/10'
-            }`}
           >
             {category.name} ({category.count})
-          </button>
+          </FilterButton>
         ))}
-      </div>
+      </FilterGrid>
 
       {/* Tools Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <ToolGrid>
         {filteredTools.map((tool) => (
-          <div
+          <ToolCard
             key={tool.id}
+            icon={tool.icon}
+            title={tool.title}
+            description={tool.description}
+            category={categories.find(c => c.id === tool.category)?.name}
             onClick={() => setSelectedTool(tool.id)}
-            className="group p-6 rounded-lg border border-black/[.08] dark:border-white/[.145] hover:border-black/[.15] dark:hover:border-white/[.25] transition-all duration-200 hover:shadow-lg cursor-pointer"
-          >
-            <div className="flex flex-col h-full">
-              <div className="flex items-center space-x-3 mb-4">
-                <span className="text-2xl">{tool.icon}</span>
-                <h3 className="text-lg font-semibold font-[family-name:var(--font-geist-sans)] group-hover:text-foreground/80 transition-colors">
-                  {tool.title}
-                </h3>
-              </div>
-              <p className="text-sm text-foreground/70 leading-relaxed flex-grow">
-                {tool.description}
-              </p>
-              <div className="mt-4 pt-4 border-t border-black/[.05] dark:border-white/[.1]">
-                <span className="text-xs text-foreground/50 uppercase tracking-wide">
-                  {categories.find(c => c.id === tool.category)?.name}
-                </span>
-              </div>
-            </div>
-          </div>
+          />
         ))}
-      </div>
+      </ToolGrid>
     </div>
   );
 }

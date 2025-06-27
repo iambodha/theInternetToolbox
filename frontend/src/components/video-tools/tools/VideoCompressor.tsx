@@ -211,7 +211,7 @@ export default function VideoCompressor() {
   return (
     <div className="space-y-6">
       {/* File Upload */}
-      <div className="border-2 border-dashed border-black/[.08] dark:border-white/[.145] rounded-lg p-8 text-center">
+      <div className="border-2 border-dashed border-foreground/20 hover:border-foreground/30 rounded-lg p-8 text-center cursor-pointer transition-colors">
         <input
           type="file"
           accept="video/*"
@@ -223,9 +223,9 @@ export default function VideoCompressor() {
           <div className="space-y-4">
             <div className="text-4xl">🗜️</div>
             <div>
-              <p className="text-lg font-medium">Click to select a video</p>
+              <p className="text-lg font-medium mb-2">Drag & drop a video here</p>
               <p className="text-sm text-foreground/60">
-                Reduce video file sizes while maintaining quality
+                or click to select a file • Reduce video file sizes while maintaining quality
               </p>
             </div>
           </div>
