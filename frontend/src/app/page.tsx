@@ -40,6 +40,14 @@ export default function Home() {
     { name: 'Image Optimizer', description: 'Reduce image file sizes while maintaining quality', category: 'Image Tools', route: '/image-optimizer', icon: '⚡' },
     { name: 'Background Remover', description: 'Remove backgrounds from images to create transparent PNGs', category: 'Image Tools', route: '/background-remover', icon: '✂️' },
     
+    // Video Tools
+    { name: 'Video Speed Controller', description: 'Change video playback speed - create slow motion or time-lapse effects', category: 'Video Tools', route: '/video-tools', icon: '⏱️' },
+    { name: 'Video Frame Extractor', description: 'Extract individual frames or thumbnails from videos as images', category: 'Video Tools', route: '/video-tools', icon: '🖼️' },
+    { name: 'Video Trimmer', description: 'Cut and trim video segments to exact timestamps', category: 'Video Tools', route: '/video-tools', icon: '✂️' },
+    { name: 'Video Rotator', description: 'Rotate videos by 90°, 180°, or 270° to correct orientation', category: 'Video Tools', route: '/video-tools', icon: '🔄' },
+    { name: 'Video Watermark', description: 'Add text or image watermarks to protect your videos', category: 'Video Tools', route: '/video-tools', icon: '💧' },
+    { name: 'Video Compressor', description: 'Reduce video file sizes while maintaining quality', category: 'Video Tools', route: '/video-tools', icon: '🗜️' },
+    
     // File Conversion Tools
     { name: 'Document Converter', description: 'Convert documents between formats', category: 'File Conversion', route: '/document-converter', icon: '📄' },
     { name: 'Audio Converter', description: 'Convert audio files to different formats', category: 'File Conversion', route: '/audio-converter', icon: '🎵' },
@@ -162,6 +170,20 @@ export default function Home() {
         "Background Remover",
       ],
       href: "/image-tools",
+    },
+    {
+      title: "Video Tools",
+      description: "Edit, convert, and enhance videos",
+      icon: "🎬",
+      tools: [
+        "Video Speed Controller",
+        "Video Frame Extractor",
+        "Video Trimmer",
+        "Video Rotator",
+        "Video Watermark",
+        "Video Compressor",
+      ],
+      href: "/video-tools",
     },
     {
       title: "File Corruption",
