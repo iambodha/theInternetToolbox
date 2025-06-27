@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import Image from 'next/image';
 
 interface VideoLoadingScreenProps {
   fileName: string;
@@ -486,10 +487,12 @@ export default function VideoFrameExtractor() {
             {extractedFrames.map((frame, index) => (
               <div key={index} className="bg-foreground/5 rounded-lg p-3">
                 <div className="aspect-video bg-background rounded mb-2 overflow-hidden">
-                  <img
+                  <Image
                     src={frame.url}
                     alt={`Frame at ${formatDuration(frame.timestamp)}`}
                     className="w-full h-full object-cover"
+                    width={videoMetadata?.width || 1920}
+                    height={videoMetadata?.height || 1080}
                   />
                 </div>
                 <div className="space-y-1">

@@ -271,7 +271,7 @@ export default function VideoCompressor() {
                 {compressionPresets.map((preset) => (
                   <button
                     key={preset.value}
-                    onClick={() => setCompressionLevel(preset.value as any)}
+                    onClick={() => setCompressionLevel(preset.value as 'low' | 'medium' | 'high')}
                     className={`p-4 rounded-lg border text-left transition-all ${
                       compressionLevel === preset.value
                         ? 'border-foreground bg-foreground/5'

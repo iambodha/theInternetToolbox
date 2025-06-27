@@ -267,7 +267,7 @@ export default function VideoWatermark() {
                 {positionOptions.map((option) => (
                   <button
                     key={option.value}
-                    onClick={() => setWatermarkPosition(option.value as any)}
+                    onClick={() => setWatermarkPosition(option.value as 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center')}
                     className={`p-3 rounded-lg border text-center transition-all ${
                       watermarkPosition === option.value
                         ? 'border-foreground bg-foreground/5'

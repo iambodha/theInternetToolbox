@@ -177,8 +177,6 @@ export default function VideoTrimmer() {
       setLoadingStep(`Preparing to trim ${originalExtension.toUpperCase()} video...`);
       setLoadingProgress(10);
 
-      const video = videoRef.current;
-      
       // Validate trim duration
       const trimDuration = endTime - startTime;
       if (trimDuration <= 0) {
@@ -211,7 +209,7 @@ export default function VideoTrimmer() {
       const videoStream = canvas.captureStream(30);
       
       // Create audio context to capture audio from the video
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
       const source = audioContext.createMediaElementSource(trimmedVideoElement);
       const destination = audioContext.createMediaStreamDestination();
       source.connect(destination);
