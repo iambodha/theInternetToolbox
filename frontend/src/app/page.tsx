@@ -149,17 +149,6 @@ export default function Home() {
       href: "/file-conversion",
     },
     {
-      title: "File Sharing",
-      description: "Secure and easy file sharing solutions",
-      icon: "📤",
-      tools: [
-        "Quick Share",
-        "Secure Upload",
-        "Link Generator",
-        "Batch Transfer",
-      ],
-    },
-    {
       title: "Image Tools",
       description: "Edit, optimize, resize, and transform images",
       icon: "🖼️",
