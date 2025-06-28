@@ -33,3 +33,225 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
+
+/* Performance optimizations */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Optimized animation keyframes with GPU acceleration */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -15px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translate3d(-20px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Optimized animation classes */
+.animate-fade-in-up {
+  opacity: 0;
+  animation: fadeInUp 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  will-change: opacity, transform;
+}
+
+.animate-fade-in-down {
+  opacity: 0;
+  animation: fadeInDown 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  will-change: opacity, transform;
+}
+
+.animate-fade-in {
+  opacity: 0;
+  animation: fadeIn 0.4s ease-out forwards;
+  will-change: opacity;
+}
+
+.animate-scale-in {
+  opacity: 0;
+  animation: scaleIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  will-change: opacity, transform;
+}
+
+.animate-slide-in-left {
+  opacity: 0;
+  animation: slideInFromLeft 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  will-change: opacity, transform;
+}
+
+/* Optimized staggered delays */
+.animate-delay-100 { animation-delay: 0.1s; }
+.animate-delay-200 { animation-delay: 0.15s; }
+.animate-delay-300 { animation-delay: 0.2s; }
+.animate-delay-400 { animation-delay: 0.25s; }
+.animate-delay-500 { animation-delay: 0.3s; }
+.animate-delay-600 { animation-delay: 0.35s; }
+
+/* Smooth hover animations with GPU acceleration */
+.hover-lift {
+  will-change: transform, box-shadow;
+  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              box-shadow 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.hover-lift:hover {
+  transform: translate3d(0, -3px, 0);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+.hover-scale {
+  will-change: transform;
+  transition: transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.hover-scale:hover {
+  transform: scale3d(1.03, 1.03, 1);
+}
+
+.hover-glow {
+  will-change: box-shadow;
+  transition: box-shadow 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.25);
+}
+
+/* Optimized button animations */
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+  will-change: transform;
+  transition: transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  transition: left 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: left;
+}
+
+.btn-primary:hover::before {
+  left: 100%;
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+/* Search overlay optimizations */
+.search-overlay-enter {
+  animation: fadeIn 0.15s ease-out;
+  will-change: opacity;
+}
+
+.search-modal-enter {
+  animation: scaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  will-change: opacity, transform;
+}
+
+/* Loading states */
+.loading-pulse {
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  will-change: opacity;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Targeted smooth transitions only for interactive elements */
+button, 
+a, 
+input, 
+textarea, 
+select,
+.card,
+.interactive {
+  transition: color 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              background-color 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              border-color 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              opacity 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Clean up animations after they complete */
+.animate-fade-in-up,
+.animate-fade-in-down,
+.animate-fade-in,
+.animate-scale-in,
+.animate-slide-in-left {
+  animation-fill-mode: both;
+}
+
+.animate-fade-in-up:not(.animating),
+.animate-fade-in-down:not(.animating),
+.animate-fade-in:not(.animating),
+.animate-scale-in:not(.animating),
+.animate-slide-in-left:not(.animating) {
+  will-change: auto;
+}

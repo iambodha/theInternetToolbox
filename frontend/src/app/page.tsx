@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 
 export default function Home() {
@@ -10,7 +10,26 @@ export default function Home() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isLoaded, setIsLoaded] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Optimized load animation trigger
+  useEffect(() => {
+    // Use requestAnimationFrame for smoother initial load
+    const timer = requestAnimationFrame(() => {
+      setIsLoaded(true);
+    });
+    return () => cancelAnimationFrame(timer);
+  }, []);
+
+  // Close search with click outside
+  const handleOverlayClick = useCallback((e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      setIsSearchOpen(false);
+      setSearchQuery('');
+      setSelectedIndex(0);
+    }
+  }, []);
 
   // All available tools with their routes
   const allTools = [
@@ -113,7 +132,11 @@ export default function Home() {
   // Focus input when search opens
   useEffect(() => {
     if (isSearchOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
+      // Slight delay to ensure modal is rendered
+      const timer = setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
     }
   }, [isSearchOpen]);
 
@@ -193,8 +216,11 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       {/* Search Overlay */}
       {isSearchOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center pt-[20vh]">
-          <div className="bg-background border border-foreground/20 rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[60vh] overflow-hidden">
+        <div 
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-start justify-center pt-[20vh] search-overlay-enter"
+          onClick={handleOverlayClick}
+        >
+          <div className="bg-background border border-foreground/20 rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[60vh] overflow-hidden search-modal-enter">
             {/* Search Input */}
             <div className="p-4 border-b border-foreground/10">
               <div className="relative">
@@ -220,12 +246,12 @@ export default function Home() {
                     <button
                       key={`${tool.category}-${tool.name}`}
                       onClick={() => router.push(tool.route)}
-                      className={`w-full text-left px-4 py-3 hover:bg-foreground/5 transition-colors ${
-                        index === selectedIndex ? 'bg-foreground/10' : ''
+                      className={`w-full text-left px-4 py-3 interactive group ${
+                        index === selectedIndex ? 'bg-foreground/8' : 'hover:bg-foreground/4'
                       }`}
                     >
                       <div className="flex items-center space-x-3">
-                        <span className="text-xl">{tool.icon}</span>
+                        <span className="text-xl hover-scale">{tool.icon}</span>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-2">
                             <h3 className="font-medium text-foreground truncate">{tool.name}</h3>
@@ -235,7 +261,7 @@ export default function Home() {
                           </div>
                           <p className="text-sm text-foreground/70 truncate">{tool.description}</p>
                         </div>
-                        <div className="text-foreground/30">
+                        <div className="text-foreground/30 group-hover:text-foreground/50 group-hover:translate-x-0.5">
                           <span className="text-sm">↗</span>
                         </div>
                       </div>
@@ -243,7 +269,7 @@ export default function Home() {
                   ))}
                 </div>
               ) : (
-                <div className="p-8 text-center">
+                <div className="p-8 text-center animate-fade-in">
                   <div className="text-4xl mb-4">🔍</div>
                   <h3 className="text-lg font-medium text-foreground mb-2">No tools found</h3>
                   <p className="text-foreground/60">Try searching for &quot;PDF&quot;, &quot;text&quot;, or &quot;convert&quot;</p>
@@ -252,7 +278,7 @@ export default function Home() {
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-3 border-t border-foreground/10 bg-foreground/2">
+            <div className="px-4 py-3 border-t border-foreground/10 bg-foreground/[0.02]">
               <div className="flex items-center justify-between text-xs text-foreground/50">
                 <div className="flex items-center space-x-4">
                   <span>↑↓ navigate</span>
@@ -267,11 +293,11 @@ export default function Home() {
       )}
 
       {/* Header */}
-      <header className="border-b border-black/[.08] dark:border-white/[.145]">
+      <header className={`border-b border-black/[.08] dark:border-white/[.145] ${isLoaded ? 'animate-fade-in-down' : 'opacity-0'}`}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-foreground rounded-sm flex items-center justify-center">
+              <div className="w-8 h-8 bg-foreground rounded-sm flex items-center justify-center hover-scale">
                 <span className="text-background font-bold text-sm">IT</span>
               </div>
               <h1 className="text-xl font-semibold font-[family-name:var(--font-geist-sans)]">
@@ -282,13 +308,13 @@ export default function Home() {
               <div className="hidden md:flex space-x-6">
                 <a
                   href="#tools"
-                  className="text-sm hover:text-foreground/80 transition-colors"
+                  className="text-sm hover:text-foreground/80 hover-scale"
                 >
                   Tools
                 </a>
                 <a
                   href="#about"
-                  className="text-sm hover:text-foreground/80 transition-colors"
+                  className="text-sm hover:text-foreground/80 hover-scale"
                 >
                   About
                 </a>
@@ -302,25 +328,25 @@ export default function Home() {
       {/* Hero Section */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center">
-          <h2 className="text-5xl sm:text-6xl font-bold font-[family-name:var(--font-geist-sans)] mb-6">
+          <h2 className={`text-5xl sm:text-6xl font-bold font-[family-name:var(--font-geist-sans)] mb-6 ${isLoaded ? 'animate-fade-in-up' : 'opacity-0'}`}>
             Your Essential
             <br />
             <span className="text-foreground/60">Internet Toolbox</span>
           </h2>
-          <p className="text-xl text-foreground/70 mb-12 max-w-2xl mx-auto leading-relaxed">
+          <p className={`text-xl text-foreground/70 mb-12 max-w-2xl mx-auto leading-relaxed ${isLoaded ? 'animate-fade-in-up animate-delay-100' : 'opacity-0'}`}>
             A curated collection of powerful, free tools for your everyday internet
             needs. Convert files, edit documents, share content, and more—all in one
             place.
           </p>
           
           {/* Search Bar */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+          <div className={`flex flex-col sm:flex-row gap-4 justify-center mb-8 ${isLoaded ? 'animate-fade-in-up animate-delay-200' : 'opacity-0'}`}>
             <button
               onClick={() => setIsSearchOpen(true)}
-              className="group relative bg-background border border-foreground/20 rounded-full px-6 py-3 text-left hover:border-foreground/30 transition-all duration-200 w-full max-w-md mx-auto"
+              className="group relative bg-background border border-foreground/20 rounded-full px-6 py-3 text-left hover:border-foreground/30 w-full max-w-md mx-auto hover-lift hover-glow interactive"
             >
               <div className="flex items-center space-x-3">
-                <span className="text-foreground/40">🔍</span>
+                <span className="text-foreground/40 hover-scale">🔍</span>
                 <span className="text-foreground/50 flex-1">Search for tools...</span>
                 <kbd className="hidden sm:inline-flex items-center px-2 py-1 border border-foreground/20 rounded text-xs text-foreground/50">
                   ⌘K
@@ -329,16 +355,16 @@ export default function Home() {
             </button>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className={`flex flex-col sm:flex-row gap-4 justify-center ${isLoaded ? 'animate-fade-in-up animate-delay-300' : 'opacity-0'}`}>
             <a
               href="#tools"
-              className="rounded-full bg-foreground text-background px-8 py-3 font-medium hover:bg-foreground/90 transition-colors"
+              className="rounded-full bg-foreground text-background px-8 py-3 font-medium hover:bg-foreground/90 btn-primary hover-lift"
             >
               Explore Tools
             </a>
             <a
               href="#about"
-              className="rounded-full border border-foreground/20 px-8 py-3 font-medium hover:bg-foreground/5 transition-colors"
+              className="rounded-full border border-foreground/20 px-8 py-3 font-medium hover:bg-foreground/5 hover-lift interactive"
             >
               Learn More
             </a>
@@ -352,10 +378,10 @@ export default function Home() {
         className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20"
       >
         <div className="text-center mb-16">
-          <h3 className="text-3xl font-bold font-[family-name:var(--font-geist-sans)] mb-4">
+          <h3 className={`text-3xl font-bold font-[family-name:var(--font-geist-sans)] mb-4 ${isLoaded ? 'animate-fade-in-up animate-delay-400' : 'opacity-0'}`}>
             Powerful Tools at Your Fingertips
           </h3>
-          <p className="text-lg text-foreground/70 max-w-2xl mx-auto">
+          <p className={`text-lg text-foreground/70 max-w-2xl mx-auto ${isLoaded ? 'animate-fade-in-up animate-delay-500' : 'opacity-0'}`}>
             Each tool is designed with simplicity and efficiency in mind. No accounts
             required, no complicated setups—just pure functionality.
           </p>
@@ -363,15 +389,19 @@ export default function Home() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {toolCategories.map((category, index) => {
+            // Use proper delay classes that exist in our CSS
+            const delayClasses = ['animate-delay-100', 'animate-delay-200', 'animate-delay-300', 'animate-delay-400', 'animate-delay-500', 'animate-delay-600'];
+            const delayClass = delayClasses[index] || 'animate-delay-600';
+            
             if (category.href) {
               return (
                 <Link
                   key={index}
                   href={category.href}
-                  className="group p-6 rounded-lg border border-black/[.08] dark:border-white/[.145] hover:border-black/[.15] dark:hover:border-white/[.25] transition-all duration-200 hover:shadow-lg cursor-pointer"
+                  className={`group p-6 rounded-lg border border-black/[.08] dark:border-white/[.145] hover:border-black/[.15] dark:hover:border-white/[.25] cursor-pointer hover-lift hover-glow card ${isLoaded ? `animate-fade-in-up ${delayClass}` : 'opacity-0'}`}
                 >
                   <div className="flex items-center space-x-3 mb-4">
-                    <span className="text-2xl">{category.icon}</span>
+                    <span className="text-2xl hover-scale">{category.icon}</span>
                     <h4 className="text-xl font-semibold font-[family-name:var(--font-geist-sans)]">
                       {category.title}
                     </h4>
@@ -383,15 +413,15 @@ export default function Home() {
                     {category.tools.map((tool, toolIndex) => (
                       <div
                         key={toolIndex}
-                        className="flex items-center space-x-2 text-sm text-foreground/60 group-hover:text-foreground/80 transition-colors"
+                        className="flex items-center space-x-2 text-sm text-foreground/60 group-hover:text-foreground/80"
                       >
-                        <span className="w-1 h-1 bg-foreground/40 rounded-full"></span>
+                        <span className="w-1 h-1 bg-foreground/40 rounded-full group-hover:bg-foreground/60"></span>
                         <span>{tool}</span>
                       </div>
                     ))}
                   </div>
                   <div className="mt-6">
-                    <button className="w-full py-2 px-4 rounded-md bg-foreground text-background hover:bg-foreground/90 transition-colors text-sm font-medium">
+                    <button className="w-full py-2 px-4 rounded-md bg-foreground text-background hover:bg-foreground/90 text-sm font-medium btn-primary">
                       Explore Tools
                     </button>
                   </div>
@@ -402,10 +432,10 @@ export default function Home() {
             return (
               <div
                 key={index}
-                className="group p-6 rounded-lg border border-black/[.08] dark:border-white/[.145] hover:border-black/[.15] dark:hover:border-white/[.25] transition-all duration-200 hover:shadow-lg"
+                className={`group p-6 rounded-lg border border-black/[.08] dark:border-white/[.145] hover:border-black/[.15] dark:hover:border-white/[.25] hover-lift card ${isLoaded ? `animate-fade-in-up ${delayClass}` : 'opacity-0'}`}
               >
                 <div className="flex items-center space-x-3 mb-4">
-                  <span className="text-2xl">{category.icon}</span>
+                  <span className="text-2xl hover-scale">{category.icon}</span>
                   <h4 className="text-xl font-semibold font-[family-name:var(--font-geist-sans)]">
                     {category.title}
                   </h4>
@@ -417,15 +447,15 @@ export default function Home() {
                   {category.tools.map((tool, toolIndex) => (
                     <div
                       key={toolIndex}
-                      className="flex items-center space-x-2 text-sm text-foreground/60 group-hover:text-foreground/80 transition-colors"
+                      className="flex items-center space-x-2 text-sm text-foreground/60 group-hover:text-foreground/80"
                     >
-                      <span className="w-1 h-1 bg-foreground/40 rounded-full"></span>
+                      <span className="w-1 h-1 bg-foreground/40 rounded-full group-hover:bg-foreground/60"></span>
                       <span>{tool}</span>
                     </div>
                   ))}
                 </div>
                 <div className="mt-6">
-                  <button className="w-full py-2 px-4 rounded-md bg-foreground/5 hover:bg-foreground/10 text-foreground/60 transition-colors text-sm font-medium">
+                  <button className="w-full py-2 px-4 rounded-md bg-foreground/5 hover:bg-foreground/10 text-foreground/60 text-sm font-medium interactive">
                     Coming Soon
                   </button>
                 </div>
@@ -439,17 +469,17 @@ export default function Home() {
       <section id="about" className="bg-foreground/[.02] dark:bg-foreground/[.05]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center">
-            <h3 className="text-3xl font-bold font-[family-name:var(--font-geist-sans)] mb-6">
+            <h3 className="text-3xl font-bold font-[family-name:var(--font-geist-sans)] mb-6 animate-fade-in-up">
               Built for Everyone
             </h3>
-            <p className="text-lg text-foreground/70 mb-8 leading-relaxed">
+            <p className="text-lg text-foreground/70 mb-8 leading-relaxed animate-fade-in-up animate-delay-100">
               The Internet Toolbox brings together the most useful web tools in one
               clean, accessible interface. Whether you&apos;re a student, professional, or
               just someone who needs to get things done online, we&apos;ve got you covered.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-foreground/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="text-center animate-fade-in-up animate-delay-200 hover-lift">
+                <div className="w-12 h-12 bg-foreground/10 rounded-full flex items-center justify-center mx-auto mb-4 hover-scale">
                   <span className="text-xl">🚀</span>
                 </div>
                 <h4 className="font-semibold mb-2">Fast & Efficient</h4>
@@ -457,8 +487,8 @@ export default function Home() {
                   Optimized for speed with minimal loading times
                 </p>
               </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-foreground/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="text-center animate-fade-in-up animate-delay-300 hover-lift">
+                <div className="w-12 h-12 bg-foreground/10 rounded-full flex items-center justify-center mx-auto mb-4 hover-scale">
                   <span className="text-xl">🔒</span>
                 </div>
                 <h4 className="font-semibold mb-2">Privacy First</h4>
@@ -466,8 +496,8 @@ export default function Home() {
                   Your files are processed locally when possible
                 </p>
               </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-foreground/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="text-center animate-fade-in-up animate-delay-400 hover-lift">
+                <div className="w-12 h-12 bg-foreground/10 rounded-full flex items-center justify-center mx-auto mb-4 hover-scale">
                   <span className="text-xl">💯</span>
                 </div>
                 <h4 className="font-semibold mb-2">Always Free</h4>
@@ -481,39 +511,39 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-black/[.08] dark:border-white/[.145]">
+      <footer className="border-t border-black/[.08] dark:border-white/[.145] animate-fade-in">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center space-x-3 mb-4 md:mb-0">
-              <div className="w-6 h-6 bg-foreground rounded-sm flex items-center justify-center">
+            <div className="flex items-center space-x-3 mb-4 md:mb-0 animate-slide-in-left">
+              <div className="w-6 h-6 bg-foreground rounded-sm flex items-center justify-center hover-scale">
                 <span className="text-background font-bold text-xs">IT</span>
               </div>
               <span className="font-semibold font-[family-name:var(--font-geist-sans)]">
                 The Internet Toolbox
               </span>
             </div>
-            <div className="flex space-x-6 text-sm text-foreground/60">
+            <div className="flex space-x-6 text-sm text-foreground/60 animate-fade-in animate-delay-200">
               <a
                 href="#"
-                className="hover:text-foreground transition-colors"
+                className="hover:text-foreground hover-scale interactive"
               >
                 Privacy Policy
               </a>
               <a
                 href="#"
-                className="hover:text-foreground transition-colors"
+                className="hover:text-foreground hover-scale interactive"
               >
                 Terms of Service
               </a>
               <a
                 href="#"
-                className="hover:text-foreground transition-colors"
+                className="hover:text-foreground hover-scale interactive"
               >
                 Contact
               </a>
             </div>
           </div>
-          <div className="mt-8 pt-8 border-t border-black/[.08] dark:border-white/[.145] text-center text-sm text-foreground/60">
+          <div className="mt-8 pt-8 border-t border-black/[.08] dark:border-white/[.145] text-center text-sm text-foreground/60 animate-fade-in animate-delay-300">
             <p>
               © 2025 The Internet Toolbox. Built with ❤️ for the internet community.
             </p>

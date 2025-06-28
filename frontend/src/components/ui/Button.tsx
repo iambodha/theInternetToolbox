@@ -30,7 +30,7 @@ export function Button({ variant = 'primary', className, children, ...props }: B
   
   return (
     <button 
-      className={cn(variantClass, className)} 
+      className={cn(variantClass, 'btn-primary hover-lift', className)} 
       {...props}
     >
       {children}
@@ -42,7 +42,7 @@ export function LinkButton({ href, variant = 'primary', className, children }: L
   const variantClass = variant === 'primary' ? styles.button.primary : styles.button.secondary;
   
   return (
-    <Link href={href} className={cn(variantClass, className)}>
+    <Link href={href} className={cn(variantClass, 'btn-primary hover-lift', className)}>
       {children}
     </Link>
   );
@@ -54,7 +54,7 @@ export function FilterButton({ active = false, onClick, children }: FilterButton
   return (
     <button
       onClick={onClick}
-      className={cn(styles.button.filter, activeClass)}
+      className={cn(styles.button.filter, activeClass, 'hover-scale')}
     >
       {children}
     </button>
@@ -65,9 +65,9 @@ export function BackButton({ onClick, children }: BackButtonProps) {
   return (
     <button
       onClick={onClick}
-      className={styles.button.back}
+      className={cn(styles.button.back, 'hover-lift group')}
     >
-      <span>←</span>
+      <span className="group-hover:-translate-x-0.5">←</span>
       <span>{children}</span>
     </button>
   );
