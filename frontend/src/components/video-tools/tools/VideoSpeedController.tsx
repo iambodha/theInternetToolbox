@@ -118,6 +118,7 @@ export default function VideoSpeedController() {
       
       // Get video metadata
       const video = document.createElement('video');
+      video.muted = true; // Mute to prevent audio during metadata loading
       video.onloadedmetadata = () => {
         setVideoMetadata({
           duration: video.duration,
@@ -137,6 +138,10 @@ export default function VideoSpeedController() {
     setLoadingProgress(5);
     
     try {
+      // Get original format information
+      const originalExtension = getOriginalExtension(file.name);
+      const preferredMimeType = getOriginalMimeType(originalExtension);
+      
       const video = videoRef.current;
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
@@ -161,12 +166,41 @@ export default function VideoSpeedController() {
       setLoadingStep('Configuring video encoder...');
       setLoadingProgress(15);
 
-      // Setup MediaRecorder
-      const stream = canvas.captureStream(fps);
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'video/webm;codecs=vp8',
-        videoBitsPerSecond: 2500000 // 2.5 Mbps
-      });
+      // Determine the best supported format
+      const supportedMimeType = getSupportedMimeType(preferredMimeType);
+
+      // Create a separate video element for audio capture (NOT muted to preserve audio)
+      const audioVideo = document.createElement('video');
+      audioVideo.src = URL.createObjectURL(file);
+      audioVideo.muted = false; // Keep audio for processing
+      audioVideo.volume = 0; // Silent for user but audio data preserved
+      audioVideo.playbackRate = speed; // Apply speed change to audio too
+      
+      // Set up audio context to capture speed-adjusted audio
+      const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      const audioSource = audioContext.createMediaElementSource(audioVideo);
+      const audioDestination = audioContext.createMediaStreamDestination();
+      audioSource.connect(audioDestination);
+
+      // Setup MediaRecorder with both video and audio streams
+      const videoStream = canvas.captureStream(fps);
+      const combinedStream = new MediaStream([
+        ...videoStream.getVideoTracks(),
+        ...audioDestination.stream.getAudioTracks()
+      ]);
+      
+      let mediaRecorder: MediaRecorder;
+      try {
+        mediaRecorder = new MediaRecorder(combinedStream, {
+          mimeType: supportedMimeType,
+          videoBitsPerSecond: 2500000,
+          audioBitsPerSecond: 128000 // Include audio bitrate
+        });
+      } catch {
+        mediaRecorder = new MediaRecorder(combinedStream, {
+          videoBitsPerSecond: 2500000
+        });
+      }
 
       const chunks: BlobPart[] = [];
       
@@ -176,16 +210,49 @@ export default function VideoSpeedController() {
         }
       };
 
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         setLoadingStep('Finalizing video file...');
         setLoadingProgress(95);
         
-        const blob = new Blob(chunks, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        const speedSuffix = speed < 1 ? `_slow_${speed}x` : speed > 1 ? `_fast_${speed}x` : '_normal';
-        const name = file.name.replace(/\.[^/.]+$/, `${speedSuffix}.webm`);
+        // Clean up audio context
+        audioContext.close();
         
-        setProcessedVideo({ name, url, size: blob.size });
+        const recordedBlob = new Blob(chunks, { type: supportedMimeType });
+        
+        // If we recorded in WebM but want original format, convert it
+        if (supportedMimeType.includes('webm') && originalExtension !== 'webm') {
+          try {
+            const convertedBlob = await convertWebMToFormat(recordedBlob, originalExtension);
+            const url = URL.createObjectURL(convertedBlob);
+            const speedSuffix = speed < 1 ? `_slow_${speed}x` : speed > 1 ? `_fast_${speed}x` : '_normal';
+            const name = file.name.replace(/\.[^/.]+$/, `${speedSuffix}.${originalExtension}`);
+            
+            setProcessedVideo({ name, url, size: convertedBlob.size });
+          } catch (conversionError) {
+            console.warn('Format conversion failed, keeping WebM:', conversionError);
+            // Fall back to WebM if conversion fails
+            const url = URL.createObjectURL(recordedBlob);
+            const speedSuffix = speed < 1 ? `_slow_${speed}x` : speed > 1 ? `_fast_${speed}x` : '_normal';
+            const name = file.name.replace(/\.[^/.]+$/, `${speedSuffix}.webm`);
+            
+            setProcessedVideo({ name, url, size: recordedBlob.size });
+          }
+        } else {
+          // Use the recorded format as-is
+          let outputExtension = originalExtension;
+          if (supportedMimeType.includes('mp4')) {
+            outputExtension = 'mp4';
+          } else if (supportedMimeType.includes('webm')) {
+            outputExtension = 'webm';
+          }
+          
+          const url = URL.createObjectURL(recordedBlob);
+          const speedSuffix = speed < 1 ? `_slow_${speed}x` : speed > 1 ? `_fast_${speed}x` : '_normal';
+          const name = file.name.replace(/\.[^/.]+$/, `${speedSuffix}.${outputExtension}`);
+          
+          setProcessedVideo({ name, url, size: recordedBlob.size });
+        }
+        
         setLoadingProgress(100);
         setLoadingStep('Video processing complete!');
         
@@ -203,6 +270,10 @@ export default function VideoSpeedController() {
 
       // Start recording
       mediaRecorder.start();
+
+      // Start audio video for speed-adjusted audio capture
+      audioVideo.currentTime = 0;
+      audioVideo.play();
 
       // Process video frames
       let currentTime = 0;
@@ -261,6 +332,141 @@ export default function VideoSpeedController() {
     }
   };
 
+  // Helper function to get original file extension
+  const getOriginalExtension = (filename: string) => {
+    const match = filename.match(/\.([^.]+)$/);
+    return match ? match[1].toLowerCase() : 'mp4';
+  };
+
+  // Helper function to get MIME type for the original format
+  const getOriginalMimeType = (extension: string) => {
+    const mimeTypes: { [key: string]: string } = {
+      'mp4': 'video/mp4',
+      'webm': 'video/webm',
+      'mov': 'video/quicktime',
+      'avi': 'video/x-msvideo',
+      'mkv': 'video/x-matroska',
+      'flv': 'video/x-flv',
+      '3gp': 'video/3gpp',
+      'wmv': 'video/x-ms-wmv'
+    };
+    return mimeTypes[extension] || 'video/mp4';
+  };
+
+  // Helper function to check MediaRecorder support for format
+  const getSupportedMimeType = (preferredType: string) => {
+    // Prioritize MP4 for better QuickTime compatibility on macOS
+    const supportedTypes = [
+      'video/mp4;codecs=h264,aac', // Best for QuickTime
+      'video/mp4;codecs=avc1.42E01E,mp4a.40.2', // H.264 baseline + AAC
+      'video/mp4;codecs=h264', // H.264 only
+      'video/mp4', // Generic MP4
+      preferredType, // User's original format
+      'video/webm;codecs=vp9,opus', // VP9 + Opus
+      'video/webm;codecs=vp8,vorbis', // VP8 + Vorbis
+      'video/webm;codecs=vp9', // VP9 only
+      'video/webm;codecs=vp8', // VP8 only
+      'video/webm' // Generic WebM fallback
+    ];
+    
+    for (const type of supportedTypes) {
+      if (MediaRecorder.isTypeSupported(type)) {
+        console.log(`Using MIME type: ${type}`);
+        return type;
+      }
+    }
+    return 'video/webm'; // Final fallback
+  };
+
+  // Helper function to convert WebM to other formats
+  const convertWebMToFormat = async (webmBlob: Blob, targetFormat: string): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        reject(new Error('Canvas context not available for conversion'));
+        return;
+      }
+
+      video.muted = true;
+      video.src = URL.createObjectURL(webmBlob);
+      
+      video.onloadedmetadata = async () => {
+        try {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+
+          // Try to use a format closer to the target
+          let targetMimeType = 'video/mp4';
+          if (targetFormat === 'mov') targetMimeType = 'video/mp4'; // MOV uses similar encoding
+          if (targetFormat === 'avi') targetMimeType = 'video/mp4'; // Convert AVI to MP4
+          
+          // Check if target format is supported for recording
+          const formatSupported = MediaRecorder.isTypeSupported(targetMimeType);
+          if (!formatSupported) {
+            // If target format not supported, try MP4 as universal fallback
+            targetMimeType = 'video/mp4';
+            if (!MediaRecorder.isTypeSupported(targetMimeType)) {
+              reject(new Error('No suitable target format supported'));
+              return;
+            }
+          }
+
+          const outputStream = canvas.captureStream(30);
+          const recorder = new MediaRecorder(outputStream, {
+            mimeType: targetMimeType,
+            videoBitsPerSecond: 5000000
+          });
+
+          const outputChunks: BlobPart[] = [];
+          
+          recorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+              outputChunks.push(event.data);
+            }
+          };
+
+          recorder.onstop = () => {
+            const convertedBlob = new Blob(outputChunks, { type: targetMimeType });
+            URL.revokeObjectURL(video.src);
+            resolve(convertedBlob);
+          };
+
+          recorder.start();
+          video.play();
+
+          // Process frames
+          const processFrames = () => {
+            if (video.ended || video.paused) {
+              recorder.stop();
+              return;
+            }
+            
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            requestAnimationFrame(processFrames);
+          };
+
+          video.onended = () => {
+            recorder.stop();
+          };
+
+          requestAnimationFrame(processFrames);
+
+        } catch (error) {
+          URL.revokeObjectURL(video.src);
+          reject(error);
+        }
+      };
+
+      video.onerror = () => {
+        URL.revokeObjectURL(video.src);
+        reject(new Error('Failed to load WebM video for conversion'));
+      };
+    });
+  };
+
   const downloadFile = (url: string, name: string) => {
     const a = document.createElement('a');
     a.href = url;
@@ -297,18 +503,18 @@ export default function VideoSpeedController() {
         />
         <label htmlFor="video-upload" className="cursor-pointer">
           <div className="space-y-4">
-            <div className="text-4xl">⏱️</div>
+            <div className="text-4xl">🎬</div>
             <div>
               <p className="text-lg font-medium mb-2">Drag & drop a video here</p>
               <p className="text-sm text-foreground/60">
-                or click to select a file • Supports MP4, WEBM, MOV, AVI and other video formats
+                or click to select a file • Control video playback speed
               </p>
             </div>
           </div>
         </label>
       </div>
 
-      {/* Hidden video element for processing */}
+      {/* Hidden elements */}
       {file && (
         <>
           <video
@@ -316,6 +522,7 @@ export default function VideoSpeedController() {
             src={URL.createObjectURL(file)}
             className="hidden"
             preload="metadata"
+            muted={true}
           />
           <canvas ref={canvasRef} className="hidden" />
         </>
@@ -325,7 +532,7 @@ export default function VideoSpeedController() {
         <>
           {/* Video Info */}
           <div className="p-4 bg-foreground/5 rounded-lg">
-            <div className="flex items-center space-x-3 mb-2">
+            <div className="flex items-center space-x-3">
               <span className="text-xl">🎬</span>
               <div>
                 <p className="font-medium">{file.name}</p>
@@ -336,56 +543,78 @@ export default function VideoSpeedController() {
             </div>
           </div>
 
-          {/* Speed Control */}
+          {/* Speed Settings */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Speed Control</h3>
-            
+            <h3 className="text-lg font-semibold">Speed Control Settings</h3>
+
             {/* Speed Presets */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {speedPresets.map((preset) => (
-                <button
-                  key={preset.value}
-                  onClick={() => setSpeed(preset.value)}
-                  className={`p-3 rounded-lg border text-left transition-all ${
-                    speed === preset.value
-                      ? 'border-foreground bg-foreground/5'
-                      : 'border-foreground/20 hover:border-foreground/30'
-                  }`}
-                >
-                  <div className="font-medium text-sm">{preset.label}</div>
-                  <div className="text-xs text-foreground/60">{preset.description}</div>
-                </button>
-              ))}
+            <div>
+              <label className="block text-sm font-medium mb-2">Speed Presets</label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {speedPresets.map((preset) => (
+                  <button
+                    key={preset.value}
+                    onClick={() => setSpeed(preset.value)}
+                    className={`p-3 rounded-lg border text-center transition-all ${
+                      speed === preset.value
+                        ? 'border-foreground bg-foreground/5'
+                        : 'border-foreground/20 hover:border-foreground/30'
+                    }`}
+                  >
+                    <div className="font-medium text-sm mb-1">{preset.label}</div>
+                    <div className="text-xs text-foreground/60">{preset.description}</div>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Custom Speed */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium">Custom Speed: {speed}x</label>
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Custom Speed: {speed}x
+              </label>
               <input
                 type="range"
                 min="0.1"
-                max="8"
+                max="5.0"
                 step="0.1"
                 value={speed}
                 onChange={(e) => setSpeed(parseFloat(e.target.value))}
                 className="w-full"
               />
-              <div className="flex justify-between text-xs text-foreground/60">
-                <span>0.1x (10x slower)</span>
-                <span>1x (normal)</span>
-                <span>8x (8x faster)</span>
+              <div className="flex justify-between text-xs text-foreground/60 mt-1">
+                <span>0.1x (Very Slow)</span>
+                <span>5.0x (Very Fast)</span>
               </div>
             </div>
 
-            {/* Duration Preview */}
-            <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-blue-700 dark:text-blue-300">Original Duration:</span>
-                <span className="font-medium text-blue-900 dark:text-blue-100">{formatDuration(videoMetadata.duration)}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm mt-1">
-                <span className="text-blue-700 dark:text-blue-300">New Duration:</span>
-                <span className="font-medium text-blue-900 dark:text-blue-100">{formatDuration(videoMetadata.duration / speed)}</span>
+            {/* Speed Preview */}
+            <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <div className="text-sm font-medium mb-2">Speed Preview</div>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-blue-700 dark:text-blue-300">Original Duration:</span>
+                  <span className="font-medium text-blue-900 dark:text-blue-100 ml-2">
+                    {formatDuration(videoMetadata.duration)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-blue-700 dark:text-blue-300">New Duration:</span>
+                  <span className="font-medium text-blue-900 dark:text-blue-100 ml-2">
+                    {formatDuration(videoMetadata.duration / speed)}
+                  </span>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-blue-700 dark:text-blue-300">Effect:</span>
+                  <span className="font-medium text-blue-900 dark:text-blue-100 ml-2">
+                    {speed < 1 
+                      ? `${(1/speed).toFixed(1)}x slower (slow motion)`
+                      : speed > 1 
+                        ? `${speed.toFixed(1)}x faster (time-lapse)`
+                        : 'Normal speed'
+                    }
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -396,7 +625,7 @@ export default function VideoSpeedController() {
             disabled={isProcessing}
             className="w-full py-3 px-4 bg-foreground text-background rounded-lg hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isProcessing ? 'Processing Video...' : `Apply ${speed}x Speed`}
+            {isProcessing ? 'Processing Video...' : `Process Video at ${speed}x Speed`}
           </button>
         </>
       )}
@@ -404,7 +633,7 @@ export default function VideoSpeedController() {
       {/* Processed Video */}
       {processedVideo && (
         <div className="space-y-4">
-          <h3 className="font-medium">Processed Video</h3>
+          <h3 className="font-medium">Speed-Adjusted Video</h3>
           <div className="p-4 bg-foreground/5 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
@@ -425,17 +654,17 @@ export default function VideoSpeedController() {
       {/* Feature Info */}
       <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
         <div className="flex items-start space-x-3">
-          <div className="text-purple-600 dark:text-purple-400 text-xl">⏱️</div>
+          <div className="text-purple-600 dark:text-purple-400 text-xl">🎬</div>
           <div>
             <h4 className="font-medium text-purple-900 dark:text-purple-100 mb-1">Video Speed Control</h4>
             <p className="text-sm text-purple-700 dark:text-purple-300">
-              Create stunning slow-motion effects or time-lapse videos. Supports speeds from 0.1x to 8x for maximum creative control.
+              Create slow motion or time-lapse effects by adjusting video playback speed. Perfect for analysis, artistic effects, or content optimization.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Processing Loading Screen */}
+      {/* Loading Screen */}
       {isProcessing && file && (
         <VideoLoadingScreen
           fileName={file.name}

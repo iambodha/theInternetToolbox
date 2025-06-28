@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import FileCorruptionHeader from '@/components/file-corruption/FileCorruptionHeader';
+import { ToolPageLayout, ToolPageMain, PageTitle } from '@/components/ui/ToolPageLayout';
 
 interface FileCorruptorProps {
   file: File | null;
@@ -545,26 +547,15 @@ export default function FileCorruptor() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <ToolPageLayout>
       {/* Header */}
-      <header className="border-b border-black/[.08] dark:border-white/[.145]">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="text-center">
-            <div className="flex items-center justify-center space-x-3 mb-4">
-              <span className="text-4xl">🔧</span>
-              <h1 className="text-3xl font-bold font-[family-name:var(--font-geist-sans)]">
-                File Corruptor
-              </h1>
-            </div>
-            <p className="text-lg text-foreground/70 max-w-2xl mx-auto">
-              Create corrupted files with custom sizes for testing purposes. Upload existing files or create dummy files from scratch.
-            </p>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <FileCorruptionHeader />
+      <ToolPageMain>
+        <PageTitle
+          title="File Corruption Tools"
+          description="Create corrupted files with custom sizes for testing and assignment purposes. Generate files that appear broken but meet specific size requirements."
+          variant="page"
+        />
         <div className="space-y-8">
           {/* Tab Navigation */}
           <div className="bg-foreground/[.02] dark:bg-foreground/[.05] rounded-lg p-2">
@@ -849,7 +840,7 @@ export default function FileCorruptor() {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+      </ToolPageMain>
+    </ToolPageLayout>
   );
 }

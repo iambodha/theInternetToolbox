@@ -114,6 +114,7 @@ export default function VideoRotator() {
       
       // Get video metadata
       const video = document.createElement('video');
+      video.muted = true; // Mute to prevent audio during metadata loading
       video.onloadedmetadata = () => {
         setVideoMetadata({
           duration: video.duration,
@@ -133,6 +134,10 @@ export default function VideoRotator() {
     setLoadingProgress(5);
     
     try {
+      // Get original format information
+      const originalExtension = getOriginalExtension(file.name);
+      const preferredMimeType = getOriginalMimeType(originalExtension);
+      
       const video = videoRef.current;
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
@@ -164,12 +169,41 @@ export default function VideoRotator() {
       setLoadingStep('Setting up video encoder with rotation...');
       setLoadingProgress(15);
 
-      // Setup MediaRecorder
-      const stream = canvas.captureStream(fps);
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'video/webm;codecs=vp8',
-        videoBitsPerSecond: 2500000
-      });
+      // Determine the best supported format
+      const supportedMimeType = getSupportedMimeType(preferredMimeType);
+
+      // Create a separate video element for audio capture (NOT muted to preserve audio)
+      const audioVideo = document.createElement('video');
+      audioVideo.src = URL.createObjectURL(file);
+      audioVideo.muted = false; // Keep audio for processing
+      audioVideo.volume = 0; // Silent for user but audio data preserved
+      
+      // Set up audio context to capture original audio
+      const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      const audioSource = audioContext.createMediaElementSource(audioVideo);
+      const audioDestination = audioContext.createMediaStreamDestination();
+      audioSource.connect(audioDestination);
+      // Don't connect to speakers to keep processing silent
+
+      // Setup MediaRecorder with both video and audio streams
+      const videoStream = canvas.captureStream(fps);
+      const combinedStream = new MediaStream([
+        ...videoStream.getVideoTracks(),
+        ...audioDestination.stream.getAudioTracks()
+      ]);
+      
+      let mediaRecorder: MediaRecorder;
+      try {
+        mediaRecorder = new MediaRecorder(combinedStream, {
+          mimeType: supportedMimeType,
+          videoBitsPerSecond: 2500000,
+          audioBitsPerSecond: 128000 // Include audio bitrate
+        });
+      } catch {
+        mediaRecorder = new MediaRecorder(combinedStream, {
+          videoBitsPerSecond: 2500000
+        });
+      }
 
       const chunks: BlobPart[] = [];
       
@@ -179,16 +213,49 @@ export default function VideoRotator() {
         }
       };
 
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         setLoadingStep('Finalizing rotated video...');
         setLoadingProgress(95);
         
-        const blob = new Blob(chunks, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        const rotationSuffix = rotation === 0 ? '' : `_rotated_${rotation}deg`;
-        const name = file.name.replace(/\.[^/.]+$/, `${rotationSuffix}.webm`);
+        // Clean up audio context
+        audioContext.close();
         
-        setRotatedVideo({ name, url, size: blob.size });
+        const recordedBlob = new Blob(chunks, { type: supportedMimeType });
+        
+        // If we recorded in WebM but want original format, convert it
+        if (supportedMimeType.includes('webm') && originalExtension !== 'webm') {
+          try {
+            const convertedBlob = await convertWebMToFormat(recordedBlob, originalExtension);
+            const url = URL.createObjectURL(convertedBlob);
+            const rotationSuffix = rotation === 0 ? '' : `_rotated_${rotation}deg`;
+            const name = file.name.replace(/\.[^/.]+$/, `${rotationSuffix}.${originalExtension}`);
+            
+            setRotatedVideo({ name, url, size: convertedBlob.size });
+          } catch (conversionError) {
+            console.warn('Format conversion failed, keeping WebM:', conversionError);
+            // Fall back to WebM if conversion fails
+            const url = URL.createObjectURL(recordedBlob);
+            const rotationSuffix = rotation === 0 ? '' : `_rotated_${rotation}deg`;
+            const name = file.name.replace(/\.[^/.]+$/, `${rotationSuffix}.webm`);
+            
+            setRotatedVideo({ name, url, size: recordedBlob.size });
+          }
+        } else {
+          // Use the recorded format as-is
+          let outputExtension = originalExtension;
+          if (supportedMimeType.includes('mp4')) {
+            outputExtension = 'mp4';
+          } else if (supportedMimeType.includes('webm')) {
+            outputExtension = 'webm';
+          }
+          
+          const url = URL.createObjectURL(recordedBlob);
+          const rotationSuffix = rotation === 0 ? '' : `_rotated_${rotation}deg`;
+          const name = file.name.replace(/\.[^/.]+$/, `${rotationSuffix}.${outputExtension}`);
+          
+          setRotatedVideo({ name, url, size: recordedBlob.size });
+        }
+        
         setLoadingProgress(100);
         setLoadingStep('Video rotation complete!');
         
@@ -206,6 +273,10 @@ export default function VideoRotator() {
 
       // Start recording
       mediaRecorder.start();
+      
+      // Start audio video for audio capture
+      audioVideo.currentTime = 0;
+      audioVideo.play();
 
       // Process video frames
       let currentTime = 0;
@@ -280,6 +351,141 @@ export default function VideoRotator() {
     }
   };
 
+  // Helper function to get original file extension
+  const getOriginalExtension = (filename: string) => {
+    const match = filename.match(/\.([^.]+)$/);
+    return match ? match[1].toLowerCase() : 'mp4';
+  };
+
+  // Helper function to get MIME type for the original format
+  const getOriginalMimeType = (extension: string) => {
+    const mimeTypes: { [key: string]: string } = {
+      'mp4': 'video/mp4',
+      'webm': 'video/webm',
+      'mov': 'video/quicktime',
+      'avi': 'video/x-msvideo',
+      'mkv': 'video/x-matroska',
+      'flv': 'video/x-flv',
+      '3gp': 'video/3gpp',
+      'wmv': 'video/x-ms-wmv'
+    };
+    return mimeTypes[extension] || 'video/mp4';
+  };
+
+  // Helper function to check MediaRecorder support for format
+  const getSupportedMimeType = (preferredType: string) => {
+    // Prioritize MP4 for better QuickTime compatibility on macOS
+    const supportedTypes = [
+      'video/mp4;codecs=h264,aac', // Best for QuickTime
+      'video/mp4;codecs=avc1.42E01E,mp4a.40.2', // H.264 baseline + AAC
+      'video/mp4;codecs=h264', // H.264 only
+      'video/mp4', // Generic MP4
+      preferredType, // User's original format
+      'video/webm;codecs=vp9,opus', // VP9 + Opus
+      'video/webm;codecs=vp8,vorbis', // VP8 + Vorbis
+      'video/webm;codecs=vp9', // VP9 only
+      'video/webm;codecs=vp8', // VP8 only
+      'video/webm' // Generic WebM fallback
+    ];
+    
+    for (const type of supportedTypes) {
+      if (MediaRecorder.isTypeSupported(type)) {
+        console.log(`Using MIME type: ${type}`);
+        return type;
+      }
+    }
+    return 'video/webm'; // Final fallback
+  };
+
+  // Helper function to convert WebM to other formats
+  const convertWebMToFormat = async (webmBlob: Blob, targetFormat: string): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        reject(new Error('Canvas context not available for conversion'));
+        return;
+      }
+
+      video.muted = true;
+      video.src = URL.createObjectURL(webmBlob);
+      
+      video.onloadedmetadata = async () => {
+        try {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+
+          // Try to use a format closer to the target
+          let targetMimeType = 'video/mp4';
+          if (targetFormat === 'mov') targetMimeType = 'video/mp4'; // MOV uses similar encoding
+          if (targetFormat === 'avi') targetMimeType = 'video/mp4'; // Convert AVI to MP4
+          
+          // Check if target format is supported for recording
+          const formatSupported = MediaRecorder.isTypeSupported(targetMimeType);
+          if (!formatSupported) {
+            // If target format not supported, try MP4 as universal fallback
+            targetMimeType = 'video/mp4';
+            if (!MediaRecorder.isTypeSupported(targetMimeType)) {
+              reject(new Error('No suitable target format supported'));
+              return;
+            }
+          }
+
+          const outputStream = canvas.captureStream(30);
+          const recorder = new MediaRecorder(outputStream, {
+            mimeType: targetMimeType,
+            videoBitsPerSecond: 5000000
+          });
+
+          const outputChunks: BlobPart[] = [];
+          
+          recorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+              outputChunks.push(event.data);
+            }
+          };
+
+          recorder.onstop = () => {
+            const convertedBlob = new Blob(outputChunks, { type: targetMimeType });
+            URL.revokeObjectURL(video.src);
+            resolve(convertedBlob);
+          };
+
+          recorder.start();
+          video.play();
+
+          // Process frames
+          const processFrames = () => {
+            if (video.ended || video.paused) {
+              recorder.stop();
+              return;
+            }
+            
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            requestAnimationFrame(processFrames);
+          };
+
+          video.onended = () => {
+            recorder.stop();
+          };
+
+          requestAnimationFrame(processFrames);
+
+        } catch (error) {
+          URL.revokeObjectURL(video.src);
+          reject(error);
+        }
+      };
+
+      video.onerror = () => {
+        URL.revokeObjectURL(video.src);
+        reject(new Error('Failed to load WebM video for conversion'));
+      };
+    });
+  };
+
   const downloadFile = (url: string, name: string) => {
     const a = document.createElement('a');
     a.href = url;
@@ -303,14 +509,6 @@ export default function VideoRotator() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const getNewDimensions = () => {
-    if (!videoMetadata) return null;
-    if (rotation === 90 || rotation === 270) {
-      return `${videoMetadata.height}x${videoMetadata.width}`;
-    }
-    return `${videoMetadata.width}x${videoMetadata.height}`;
-  };
-
   return (
     <div className="space-y-6">
       {/* File Upload */}
@@ -328,7 +526,7 @@ export default function VideoRotator() {
             <div>
               <p className="text-lg font-medium mb-2">Drag & drop a video here</p>
               <p className="text-sm text-foreground/60">
-                or click to select a file • Rotate videos to correct orientation
+                or click to select a file • Rotate videos in 90° increments
               </p>
             </div>
           </div>
@@ -343,6 +541,7 @@ export default function VideoRotator() {
             src={URL.createObjectURL(file)}
             className="hidden"
             preload="metadata"
+            muted={true}
           />
           <canvas ref={canvasRef} className="hidden" />
         </>
@@ -363,87 +562,55 @@ export default function VideoRotator() {
             </div>
           </div>
 
-          {/* Rotation Controls */}
+          {/* Rotation Settings */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Rotation Settings</h3>
 
             {/* Rotation Options */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {rotationOptions.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => setRotation(option.value as 0 | 90 | 180 | 270)}
-                  className={`p-4 rounded-lg border text-left transition-all ${
-                    rotation === option.value
-                      ? 'border-foreground bg-foreground/5'
-                      : 'border-foreground/20 hover:border-foreground/30'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <span className="text-2xl">{option.icon}</span>
-                    <div>
-                      <div className="font-medium text-sm">{option.label}</div>
-                      <div className="text-xs text-foreground/60">{option.description}</div>
-                    </div>
-                  </div>
-                </button>
-              ))}
+            <div>
+              <label className="block text-sm font-medium mb-2">Select Rotation</label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {rotationOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setRotation(option.value as 0 | 90 | 180 | 270)}
+                    className={`p-4 rounded-lg border text-center transition-all ${
+                      rotation === option.value
+                        ? 'border-foreground bg-foreground/5'
+                        : 'border-foreground/20 hover:border-foreground/30'
+                    }`}
+                  >
+                    <div className="text-2xl mb-2">{option.icon}</div>
+                    <div className="font-medium text-sm mb-1">{option.label}</div>
+                    <div className="text-xs text-foreground/60">{option.description}</div>
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Preview Info */}
+            {/* Preview */}
             {rotation !== 0 && (
-              <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-blue-700 dark:text-blue-300">Original Dimensions:</span>
-                    <span className="font-medium text-blue-900 dark:text-blue-100">
+              <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <div className="text-sm font-medium mb-2">Rotation Preview</div>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-blue-700 dark:text-blue-300">Current:</span>
+                    <span className="font-medium text-blue-900 dark:text-blue-100 ml-2">
                       {videoMetadata.width}x{videoMetadata.height}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-blue-700 dark:text-blue-300">New Dimensions:</span>
-                    <span className="font-medium text-blue-900 dark:text-blue-100">
-                      {getNewDimensions()}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-blue-700 dark:text-blue-300">Rotation:</span>
-                    <span className="font-medium text-blue-900 dark:text-blue-100">
-                      {rotation}° clockwise
+                  <div>
+                    <span className="text-blue-700 dark:text-blue-300">After {rotation}° rotation:</span>
+                    <span className="font-medium text-blue-900 dark:text-blue-100 ml-2">
+                      {rotation === 90 || rotation === 270 
+                        ? `${videoMetadata.height}x${videoMetadata.width}`
+                        : `${videoMetadata.width}x${videoMetadata.height}`
+                      }
                     </span>
                   </div>
                 </div>
               </div>
             )}
-
-            {/* Visual Preview */}
-            <div className="p-4 bg-foreground/5 rounded-lg">
-              <div className="flex items-center justify-center space-x-8">
-                <div className="text-center">
-                  <div className="text-xs text-foreground/60 mb-2">Original</div>
-                  <div className="w-16 h-12 bg-blue-200 dark:bg-blue-800 rounded flex items-center justify-center">
-                    <span className="text-xs font-mono">16:9</span>
-                  </div>
-                </div>
-                <div className="text-foreground/40">→</div>
-                <div className="text-center">
-                  <div className="text-xs text-foreground/60 mb-2">After Rotation</div>
-                  <div 
-                    className={`bg-green-200 dark:bg-green-800 rounded flex items-center justify-center transition-transform ${
-                      rotation === 90 || rotation === 270 ? 'w-12 h-16' : 'w-16 h-12'
-                    }`}
-                    style={{ 
-                      transform: `rotate(${rotation}deg)`,
-                      transformOrigin: 'center'
-                    }}
-                  >
-                    <span className="text-xs font-mono">
-                      {rotation === 90 || rotation === 270 ? '9:16' : '16:9'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Rotate Button */}
@@ -452,7 +619,7 @@ export default function VideoRotator() {
             disabled={isProcessing}
             className="w-full py-3 px-4 bg-foreground text-background rounded-lg hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isProcessing ? 'Rotating Video...' : rotation === 0 ? 'No Rotation Needed' : `Rotate ${rotation}°`}
+            {isProcessing ? 'Rotating Video...' : `Rotate Video ${rotation}°`}
           </button>
         </>
       )}
@@ -485,7 +652,7 @@ export default function VideoRotator() {
           <div>
             <h4 className="font-medium text-indigo-900 dark:text-indigo-100 mb-1">Video Rotation</h4>
             <p className="text-sm text-indigo-700 dark:text-indigo-300">
-              Fix video orientation by rotating 90°, 180°, or 270°. Perfect for correcting videos recorded in wrong orientation or creating artistic effects.
+              Rotate videos in 90-degree increments to fix orientation issues. Perfect for mobile videos that were recorded in the wrong orientation.
             </p>
           </div>
         </div>

@@ -112,6 +112,7 @@ export default function VideoFrameExtractor() {
       
       // Get video metadata
       const video = document.createElement('video');
+      video.muted = true; // Mute to prevent audio during metadata loading
       video.onloadedmetadata = () => {
         setVideoMetadata({
           duration: video.duration,
@@ -322,6 +323,7 @@ export default function VideoFrameExtractor() {
             src={URL.createObjectURL(file)}
             className="hidden"
             preload="metadata"
+            muted={true}
           />
           <canvas ref={canvasRef} className="hidden" />
         </>

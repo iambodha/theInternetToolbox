@@ -31,6 +31,7 @@ export default function VideoWatermark() {
       
       // Get video metadata
       const video = document.createElement('video');
+      video.muted = true; // Mute to prevent audio during metadata loading
       video.onloadedmetadata = () => {
         setVideoMetadata({
           duration: video.duration,
@@ -68,6 +69,10 @@ export default function VideoWatermark() {
     setIsProcessing(true);
     
     try {
+      // Get original format information
+      const originalExtension = getOriginalExtension(file.name);
+      const preferredMimeType = getOriginalMimeType(originalExtension);
+      
       const video = videoRef.current;
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
@@ -82,12 +87,40 @@ export default function VideoWatermark() {
 
       const fps = 30;
       
-      // Setup MediaRecorder
-      const stream = canvas.captureStream(fps);
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'video/webm;codecs=vp8',
-        videoBitsPerSecond: 2500000
-      });
+      // Determine the best supported format
+      const supportedMimeType = getSupportedMimeType(preferredMimeType);
+      
+      // Create a separate video element for audio capture (NOT muted to preserve audio)
+      const audioVideo = document.createElement('video');
+      audioVideo.src = URL.createObjectURL(file);
+      audioVideo.muted = false; // Keep audio for processing
+      audioVideo.volume = 0; // Silent for user but audio data preserved
+      
+      // Set up audio context to capture original audio
+      const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      const audioSource = audioContext.createMediaElementSource(audioVideo);
+      const audioDestination = audioContext.createMediaStreamDestination();
+      audioSource.connect(audioDestination);
+      
+      // Setup MediaRecorder with both video and audio streams
+      const videoStream = canvas.captureStream(fps);
+      const combinedStream = new MediaStream([
+        ...videoStream.getVideoTracks(),
+        ...audioDestination.stream.getAudioTracks()
+      ]);
+      
+      let mediaRecorder: MediaRecorder;
+      try {
+        mediaRecorder = new MediaRecorder(combinedStream, {
+          mimeType: supportedMimeType,
+          videoBitsPerSecond: 2500000,
+          audioBitsPerSecond: 128000 // Include audio bitrate
+        });
+      } catch {
+        mediaRecorder = new MediaRecorder(combinedStream, {
+          videoBitsPerSecond: 2500000
+        });
+      }
 
       const chunks: BlobPart[] = [];
       
@@ -97,17 +130,55 @@ export default function VideoWatermark() {
         }
       };
 
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        const name = file.name.replace(/\.[^/.]+$/, '_watermarked.webm');
+      mediaRecorder.onstop = async () => {
+        // Clean up audio context
+        audioContext.close();
         
-        setWatermarkedVideo({ name, url, size: blob.size });
+        const recordedBlob = new Blob(chunks, { type: supportedMimeType });
+        
+        // If we recorded in WebM but want original format, convert it
+        if (supportedMimeType.includes('webm') && originalExtension !== 'webm') {
+          try {
+            const convertedBlob = await convertWebMToFormat(recordedBlob, originalExtension);
+            const url = URL.createObjectURL(convertedBlob);
+            const name = file.name.replace(/\.[^/.]+$/, `_watermarked.${originalExtension}`);
+            
+            setWatermarkedVideo({ name, url, size: convertedBlob.size });
+          } catch (conversionError) {
+            console.warn('Format conversion failed, keeping WebM:', conversionError);
+            // Fall back to WebM if conversion fails
+            const url = URL.createObjectURL(recordedBlob);
+            const name = file.name.replace(/\.[^/.]+$/, '_watermarked.webm');
+            
+            setWatermarkedVideo({ name, url, size: recordedBlob.size });
+          }
+        } else {
+          // Use the recorded format as-is
+          let outputExtension = originalExtension;
+          if (supportedMimeType.includes('mp4')) {
+            outputExtension = 'mp4';
+          } else if (supportedMimeType.includes('webm')) {
+            outputExtension = 'webm';
+          }
+          
+          const url = URL.createObjectURL(recordedBlob);
+          const name = file.name.replace(/\.[^/.]+$/, `_watermarked.${outputExtension}`);
+          
+          setWatermarkedVideo({ name, url, size: recordedBlob.size });
+        }
+        
         setIsProcessing(false);
       };
 
       // Start recording
       mediaRecorder.start();
+      
+      // Start both videos simultaneously for proper audio/video sync
+      const startTime = Date.now();
+      
+      // Start audio video
+      audioVideo.currentTime = 0;
+      await audioVideo.play();
 
       // Process video frames
       let currentTime = 0;
@@ -120,7 +191,10 @@ export default function VideoWatermark() {
           return;
         }
 
-        video.currentTime = currentTime;
+        // Sync both video elements to the same time
+        const targetTime = currentTime;
+        video.currentTime = targetTime;
+        audioVideo.currentTime = targetTime;
         
         video.onseeked = () => {
           // Draw video frame
@@ -152,7 +226,7 @@ export default function VideoWatermark() {
           currentTime += 1 / fps;
           
           // Continue with next frame
-          setTimeout(processFrame, 16);
+          setTimeout(processFrame, 1000 / fps); // Maintain proper timing
         };
       };
 
@@ -192,6 +266,141 @@ export default function VideoWatermark() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  // Helper function to get original file extension
+  const getOriginalExtension = (filename: string) => {
+    const match = filename.match(/\.([^.]+)$/);
+    return match ? match[1].toLowerCase() : 'mp4';
+  };
+
+  // Helper function to get MIME type for the original format
+  const getOriginalMimeType = (extension: string) => {
+    const mimeTypes: { [key: string]: string } = {
+      'mp4': 'video/mp4',
+      'webm': 'video/webm',
+      'mov': 'video/quicktime',
+      'avi': 'video/x-msvideo',
+      'mkv': 'video/x-matroska',
+      'flv': 'video/x-flv',
+      '3gp': 'video/3gpp',
+      'wmv': 'video/x-ms-wmv'
+    };
+    return mimeTypes[extension] || 'video/mp4';
+  };
+
+  // Helper function to check MediaRecorder support for format
+  const getSupportedMimeType = (preferredType: string) => {
+    // Prioritize MP4 for better QuickTime compatibility on macOS
+    const supportedTypes = [
+      'video/mp4;codecs=h264,aac', // Best for QuickTime
+      'video/mp4;codecs=avc1.42E01E,mp4a.40.2', // H.264 baseline + AAC
+      'video/mp4;codecs=h264', // H.264 only
+      'video/mp4', // Generic MP4
+      preferredType, // User's original format
+      'video/webm;codecs=vp9,opus', // VP9 + Opus
+      'video/webm;codecs=vp8,vorbis', // VP8 + Vorbis
+      'video/webm;codecs=vp9', // VP9 only
+      'video/webm;codecs=vp8', // VP8 only
+      'video/webm' // Generic WebM fallback
+    ];
+    
+    for (const type of supportedTypes) {
+      if (MediaRecorder.isTypeSupported(type)) {
+        console.log(`Using MIME type: ${type}`);
+        return type;
+      }
+    }
+    return 'video/webm'; // Final fallback
+  };
+
+  // Helper function to convert WebM to other formats
+  const convertWebMToFormat = async (webmBlob: Blob, targetFormat: string): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        reject(new Error('Canvas context not available for conversion'));
+        return;
+      }
+
+      video.muted = true;
+      video.src = URL.createObjectURL(webmBlob);
+      
+      video.onloadedmetadata = async () => {
+        try {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+
+          // Try to use a format closer to the target
+          let targetMimeType = 'video/mp4';
+          if (targetFormat === 'mov') targetMimeType = 'video/mp4'; // MOV uses similar encoding
+          if (targetFormat === 'avi') targetMimeType = 'video/mp4'; // Convert AVI to MP4
+          
+          // Check if target format is supported for recording
+          const formatSupported = MediaRecorder.isTypeSupported(targetMimeType);
+          if (!formatSupported) {
+            // If target format not supported, try MP4 as universal fallback
+            targetMimeType = 'video/mp4';
+            if (!MediaRecorder.isTypeSupported(targetMimeType)) {
+              reject(new Error('No suitable target format supported'));
+              return;
+            }
+          }
+
+          const outputStream = canvas.captureStream(30);
+          const recorder = new MediaRecorder(outputStream, {
+            mimeType: targetMimeType,
+            videoBitsPerSecond: 5000000
+          });
+
+          const outputChunks: BlobPart[] = [];
+          
+          recorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+              outputChunks.push(event.data);
+            }
+          };
+
+          recorder.onstop = () => {
+            const convertedBlob = new Blob(outputChunks, { type: targetMimeType });
+            URL.revokeObjectURL(video.src);
+            resolve(convertedBlob);
+          };
+
+          recorder.start();
+          video.play();
+
+          // Process frames
+          const processFrames = () => {
+            if (video.ended || video.paused) {
+              recorder.stop();
+              return;
+            }
+            
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            requestAnimationFrame(processFrames);
+          };
+
+          video.onended = () => {
+            recorder.stop();
+          };
+
+          requestAnimationFrame(processFrames);
+
+        } catch (error) {
+          URL.revokeObjectURL(video.src);
+          reject(error);
+        }
+      };
+
+      video.onerror = () => {
+        URL.revokeObjectURL(video.src);
+        reject(new Error('Failed to load WebM video for conversion'));
+      };
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* File Upload */}
@@ -224,6 +433,7 @@ export default function VideoWatermark() {
             src={URL.createObjectURL(file)}
             className="hidden"
             preload="metadata"
+            muted={true}
           />
           <canvas ref={canvasRef} className="hidden" />
         </>

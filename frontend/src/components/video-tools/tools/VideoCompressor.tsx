@@ -53,6 +53,7 @@ export default function VideoCompressor() {
       
       // Get video metadata
       const video = document.createElement('video');
+      video.muted = true; // Mute to prevent audio during metadata loading
       video.onloadedmetadata = () => {
         setVideoMetadata({
           duration: video.duration,
@@ -82,7 +83,10 @@ export default function VideoCompressor() {
     setIsProcessing(true);
     
     try {
-      const video = videoRef.current;
+      // Get original format information
+      const originalExtension = getOriginalExtension(file.name);
+      const preferredMimeType = getOriginalMimeType(originalExtension);
+      
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
       
@@ -94,22 +98,66 @@ export default function VideoCompressor() {
       canvas.width = newDimensions.width;
       canvas.height = newDimensions.height;
 
+      // Create video element for frame processing
+      const videoElement = document.createElement('video');
+      videoElement.src = URL.createObjectURL(file);
+      videoElement.crossOrigin = 'anonymous';
+      
+      // Create separate audio video element for audio capture
+      const audioVideoElement = document.createElement('video');
+      audioVideoElement.src = URL.createObjectURL(file);
+      audioVideoElement.crossOrigin = 'anonymous';
+      audioVideoElement.muted = false;
+      audioVideoElement.volume = 1; // Keep full volume for audio capture
+      
+      // Wait for both videos to load
+      await Promise.all([
+        new Promise<void>((resolve, reject) => {
+          videoElement.onloadedmetadata = () => resolve();
+          videoElement.onerror = () => reject(new Error('Failed to load video for frame processing'));
+        }),
+        new Promise<void>((resolve, reject) => {
+          audioVideoElement.onloadedmetadata = () => resolve();
+          audioVideoElement.onerror = () => reject(new Error('Failed to load video for audio processing'));
+        })
+      ]);
+
+      // Set up audio context for audio capture
+      const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      
+      // Resume audio context if suspended
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
+      
+      const audioSource = audioContext.createMediaElementSource(audioVideoElement);
+      const audioDestination = audioContext.createMediaStreamDestination();
+      audioSource.connect(audioDestination);
+
       const preset = compressionPresets.find(p => p.value === compressionLevel);
       const bitrate = preset?.bitrate || 1500000;
       const fps = 24; // Reduced FPS for compression
       
-      // Setup MediaRecorder with compression settings
-      const stream = canvas.captureStream(fps);
-      let mediaRecorder: MediaRecorder;
+      // Determine the best supported format
+      const supportedMimeType = getSupportedMimeType(preferredMimeType);
       
+      // Setup MediaRecorder with compression settings and audio
+      const videoStream = canvas.captureStream(fps);
+      const combinedStream = new MediaStream([
+        ...videoStream.getVideoTracks(),
+        ...audioDestination.stream.getAudioTracks()
+      ]);
+      
+      let mediaRecorder: MediaRecorder;
       try {
-        mediaRecorder = new MediaRecorder(stream, {
-          mimeType: 'video/webm;codecs=vp8',
-          videoBitsPerSecond: bitrate
+        mediaRecorder = new MediaRecorder(combinedStream, {
+          mimeType: supportedMimeType,
+          videoBitsPerSecond: bitrate,
+          audioBitsPerSecond: 128000
         });
       } catch {
         // Fallback without specific codec
-        mediaRecorder = new MediaRecorder(stream, {
+        mediaRecorder = new MediaRecorder(combinedStream, {
           videoBitsPerSecond: bitrate
         });
       }
@@ -122,23 +170,69 @@ export default function VideoCompressor() {
         }
       };
 
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        const compressionRatio = ((file.size - blob.size) / file.size) * 100;
-        const name = file.name.replace(/\.[^/.]+$/, `_compressed_${compressionLevel}.webm`);
+      mediaRecorder.onstop = async () => {
+        // Clean up audio context
+        audioContext.close();
         
-        setCompressedVideo({ 
-          name, 
-          url, 
-          size: blob.size, 
-          compressionRatio: Math.max(0, compressionRatio)
-        });
+        const recordedBlob = new Blob(chunks, { type: supportedMimeType });
+        
+        // If we recorded in WebM but want original format, convert it
+        if (supportedMimeType.includes('webm') && originalExtension !== 'webm') {
+          try {
+            const convertedBlob = await convertWebMToFormat(recordedBlob, originalExtension);
+            const url = URL.createObjectURL(convertedBlob);
+            const compressionRatio = ((file.size - convertedBlob.size) / file.size) * 100;
+            const name = file.name.replace(/\.[^/.]+$/, `_compressed_${compressionLevel}.${originalExtension}`);
+            
+            setCompressedVideo({ 
+              name, 
+              url, 
+              size: convertedBlob.size, 
+              compressionRatio: Math.max(0, compressionRatio)
+            });
+          } catch (conversionError) {
+            console.warn('Format conversion failed, keeping WebM:', conversionError);
+            // Fall back to WebM if conversion fails
+            const url = URL.createObjectURL(recordedBlob);
+            const compressionRatio = ((file.size - recordedBlob.size) / file.size) * 100;
+            const name = file.name.replace(/\.[^/.]+$/, `_compressed_${compressionLevel}.webm`);
+            
+            setCompressedVideo({ 
+              name, 
+              url, 
+              size: recordedBlob.size, 
+              compressionRatio: Math.max(0, compressionRatio)
+            });
+          }
+        } else {
+          // Use the recorded format as-is
+          let outputExtension = originalExtension;
+          if (supportedMimeType.includes('mp4')) {
+            outputExtension = 'mp4';
+          } else if (supportedMimeType.includes('webm')) {
+            outputExtension = 'webm';
+          }
+          
+          const url = URL.createObjectURL(recordedBlob);
+          const compressionRatio = ((file.size - recordedBlob.size) / file.size) * 100;
+          const name = file.name.replace(/\.[^/.]+$/, `_compressed_${compressionLevel}.${outputExtension}`);
+          
+          setCompressedVideo({ 
+            name, 
+            url, 
+            size: recordedBlob.size, 
+            compressionRatio: Math.max(0, compressionRatio)
+          });
+        }
+        
         setIsProcessing(false);
       };
 
       // Start recording
       mediaRecorder.start();
+
+      // Start audio playback for audio capture
+      await audioVideoElement.play();
 
       // Process video frames with reduced quality for compression
       let currentTime = 0;
@@ -149,18 +243,21 @@ export default function VideoCompressor() {
       const processFrame = () => {
         if (frameCount >= totalFrames || currentTime >= videoMetadata.duration) {
           mediaRecorder.stop();
+          audioVideoElement.pause();
           return;
         }
 
-        video.currentTime = currentTime;
+        // Sync both video elements
+        videoElement.currentTime = currentTime;
+        audioVideoElement.currentTime = currentTime;
         
-        video.onseeked = () => {
+        videoElement.onseeked = () => {
           // Apply additional quality reduction for compression
           if (compressionLevel === 'high') {
             ctx.imageSmoothingEnabled = false;
           }
           
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
           
           frameCount++;
           currentTime += (1 / fps) * frameSkip;
@@ -171,8 +268,8 @@ export default function VideoCompressor() {
       };
 
       // Start processing
-      video.currentTime = 0;
-      video.onseeked = () => {
+      videoElement.currentTime = 0;
+      videoElement.onseeked = () => {
         processFrame();
       };
 
@@ -181,6 +278,141 @@ export default function VideoCompressor() {
       alert('Video compression failed. Please try with a different video file.');
       setIsProcessing(false);
     }
+  };
+
+  // Helper function to get original file extension
+  const getOriginalExtension = (filename: string) => {
+    const match = filename.match(/\.([^.]+)$/);
+    return match ? match[1].toLowerCase() : 'mp4';
+  };
+
+  // Helper function to get MIME type for the original format
+  const getOriginalMimeType = (extension: string) => {
+    const mimeTypes: { [key: string]: string } = {
+      'mp4': 'video/mp4',
+      'webm': 'video/webm',
+      'mov': 'video/quicktime',
+      'avi': 'video/x-msvideo',
+      'mkv': 'video/x-matroska',
+      'flv': 'video/x-flv',
+      '3gp': 'video/3gpp',
+      'wmv': 'video/x-ms-wmv'
+    };
+    return mimeTypes[extension] || 'video/mp4';
+  };
+
+  // Helper function to check MediaRecorder support for format
+  const getSupportedMimeType = (preferredType: string) => {
+    // Prioritize MP4 for better QuickTime compatibility on macOS
+    const supportedTypes = [
+      'video/mp4;codecs=h264,aac', // Best for QuickTime
+      'video/mp4;codecs=avc1.42E01E,mp4a.40.2', // H.264 baseline + AAC
+      'video/mp4;codecs=h264', // H.264 only
+      'video/mp4', // Generic MP4
+      preferredType, // User's original format
+      'video/webm;codecs=vp9,opus', // VP9 + Opus
+      'video/webm;codecs=vp8,vorbis', // VP8 + Vorbis
+      'video/webm;codecs=vp9', // VP9 only
+      'video/webm;codecs=vp8', // VP8 only
+      'video/webm' // Generic WebM fallback
+    ];
+    
+    for (const type of supportedTypes) {
+      if (MediaRecorder.isTypeSupported(type)) {
+        console.log(`Using MIME type: ${type}`);
+        return type;
+      }
+    }
+    return 'video/webm'; // Final fallback
+  };
+
+  // Helper function to convert WebM to other formats
+  const convertWebMToFormat = async (webmBlob: Blob, targetFormat: string): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        reject(new Error('Canvas context not available for conversion'));
+        return;
+      }
+
+      video.muted = true;
+      video.src = URL.createObjectURL(webmBlob);
+      
+      video.onloadedmetadata = async () => {
+        try {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+
+          // Try to use a format closer to the target
+          let targetMimeType = 'video/mp4';
+          if (targetFormat === 'mov') targetMimeType = 'video/mp4'; // MOV uses similar encoding
+          if (targetFormat === 'avi') targetMimeType = 'video/mp4'; // Convert AVI to MP4
+          
+          // Check if target format is supported for recording
+          const formatSupported = MediaRecorder.isTypeSupported(targetMimeType);
+          if (!formatSupported) {
+            // If target format not supported, try MP4 as universal fallback
+            targetMimeType = 'video/mp4';
+            if (!MediaRecorder.isTypeSupported(targetMimeType)) {
+              reject(new Error('No suitable target format supported'));
+              return;
+            }
+          }
+
+          const outputStream = canvas.captureStream(30);
+          const recorder = new MediaRecorder(outputStream, {
+            mimeType: targetMimeType,
+            videoBitsPerSecond: 5000000
+          });
+
+          const outputChunks: BlobPart[] = [];
+          
+          recorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+              outputChunks.push(event.data);
+            }
+          };
+
+          recorder.onstop = () => {
+            const convertedBlob = new Blob(outputChunks, { type: targetMimeType });
+            URL.revokeObjectURL(video.src);
+            resolve(convertedBlob);
+          };
+
+          recorder.start();
+          video.play();
+
+          // Process frames
+          const processFrames = () => {
+            if (video.ended || video.paused) {
+              recorder.stop();
+              return;
+            }
+            
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            requestAnimationFrame(processFrames);
+          };
+
+          video.onended = () => {
+            recorder.stop();
+          };
+
+          requestAnimationFrame(processFrames);
+
+        } catch (error) {
+          URL.revokeObjectURL(video.src);
+          reject(error);
+        }
+      };
+
+      video.onerror = () => {
+        URL.revokeObjectURL(video.src);
+        reject(new Error('Failed to load WebM video for conversion'));
+      };
+    });
   };
 
   const downloadFile = (url: string, name: string) => {
@@ -240,6 +472,7 @@ export default function VideoCompressor() {
             src={URL.createObjectURL(file)}
             className="hidden"
             preload="metadata"
+            muted={true}
           />
           <canvas ref={canvasRef} className="hidden" />
         </>
