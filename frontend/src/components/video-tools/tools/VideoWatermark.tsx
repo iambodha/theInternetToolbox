@@ -174,8 +174,6 @@ export default function VideoWatermark() {
       mediaRecorder.start();
       
       // Start both videos simultaneously for proper audio/video sync
-      const startTime = Date.now();
-      
       // Start audio video
       audioVideo.currentTime = 0;
       await audioVideo.play();
