@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import NextImage from 'next/image';
 
 const supportedFormats = {
   input: ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'tiff'],
@@ -32,7 +33,7 @@ export default function ImagePixelify() {
     return new Promise((resolve) => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      const img = new Image();
+      const img = new window.Image();
 
       img.onload = () => {
         const { width, height } = img;
@@ -307,9 +308,11 @@ export default function ImagePixelify() {
               <div key={index} className="border border-foreground/20 rounded-lg p-3">
                 {file.preview && (
                   <div className="mb-3">
-                    <img
+                    <NextImage
                       src={file.preview}
                       alt={`Pixelified ${file.name}`}
+                      width={400}
+                      height={128}
                       className="w-full h-32 object-contain bg-gray-100 dark:bg-gray-800 rounded"
                       style={{ imageRendering: 'pixelated' }}
                     />

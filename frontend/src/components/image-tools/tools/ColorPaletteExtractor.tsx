@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import NextImage from 'next/image';
 
 const supportedFormats = {
   input: ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'tiff']
@@ -52,7 +53,8 @@ export default function ColorPaletteExtractor() {
 
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
-    let h, s, l = (max + min) / 2;
+    let h, s;
+    const l = (max + min) / 2;
 
     if (max === min) {
       h = s = 0;
@@ -200,7 +202,7 @@ export default function ColorPaletteExtractor() {
     return new Promise((resolve) => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      const img = new Image();
+      const img = new window.Image();
 
       img.onload = () => {
         canvas.width = img.width;
@@ -417,9 +419,11 @@ export default function ColorPaletteExtractor() {
           {paletteResults.map((result, index) => (
             <div key={index} className="border border-foreground/20 rounded-lg p-4">
               <div className="flex items-start space-x-4 mb-4">
-                <img
+                <NextImage
                   src={result.preview}
                   alt={result.fileName}
+                  width={80}
+                  height={80}
                   className="w-20 h-20 object-cover rounded"
                 />
                 <div className="flex-1">
