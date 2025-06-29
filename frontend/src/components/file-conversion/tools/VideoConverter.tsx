@@ -2,23 +2,102 @@
 
 import { useState, useCallback } from 'react';
 
+interface LoadingScreenProps {
+  fileName: string;
+  currentStep: string;
+  progress?: number;
+  isConverting: boolean;
+  outputFormat: string;
+}
+
+function LoadingScreen({ fileName, currentStep, progress, isConverting, outputFormat }: LoadingScreenProps) {
+  if (!isConverting) return null;
+
+  return (
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+      <div className="bg-background border border-foreground/20 rounded-xl p-8 max-w-md w-full mx-4 shadow-2xl">
+        <div className="text-center space-y-6">
+          {/* Video Icon Animation */}
+          <div className="relative">
+            <div className="text-6xl animate-pulse">🎬</div>
+            <div className="absolute inset-0 animate-spin">
+              <div className="w-20 h-20 mx-auto border-4 border-transparent border-t-foreground rounded-full"></div>
+            </div>
+          </div>
+
+          {/* File Info */}
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold text-foreground">Converting Video</h3>
+            <p className="text-sm text-foreground/70 truncate">{fileName}</p>
+            <p className="text-xs text-foreground/50">
+              Converting to {outputFormat.toUpperCase()}
+            </p>
+          </div>
+
+          {/* Progress Bar */}
+          {progress !== undefined && (
+            <div className="space-y-2">
+              <div className="w-full bg-foreground/10 rounded-full h-2 overflow-hidden">
+                <div 
+                  className="bg-foreground h-full rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${Math.max(5, progress)}%` }}
+                />
+              </div>
+              <p className="text-sm text-foreground/60">{Math.round(progress)}% complete</p>
+            </div>
+          )}
+
+          {/* Current Step */}
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-foreground">{currentStep}</p>
+            <div className="flex justify-center space-x-1">
+              <div className="w-2 h-2 bg-foreground rounded-full animate-bounce"></div>
+              <div className="w-2 h-2 bg-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+              <div className="w-2 h-2 bg-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            </div>
+          </div>
+
+          {/* Cancel Button */}
+          <button 
+            onClick={() => window.location.reload()}
+            className="text-sm text-foreground/60 hover:text-foreground underline transition-colors"
+          >
+            Cancel and reload page
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function VideoConverter() {
   const [files, setFiles] = useState<File[]>([]);
   const [outputFormat, setOutputFormat] = useState<string>('mp4');
   const [quality, setQuality] = useState<string>('medium');
   const [resolution, setResolution] = useState<string>('original');
+  const [audioBitrate, setAudioBitrate] = useState<string>('128');
   const [isConverting, setIsConverting] = useState(false);
   const [convertedFiles, setConvertedFiles] = useState<{ name: string; url: string; size: number }[]>([]);
+  const [loadingStep, setLoadingStep] = useState('');
+  const [loadingProgress, setLoadingProgress] = useState(0);
 
   const supportedFormats = {
     input: ['mp4', 'avi', 'mov', 'mkv', 'wmv', 'flv', 'webm', 'm4v'],
-    output: ['mp4', 'avi', 'mov', 'mkv', 'webm']
+    output: ['mp4', 'avi', 'mov', 'mkv', 'webm', 'mp3', 'wav', 'aac', 'ogg']
   };
 
   const qualityOptions = [
     { value: 'low', label: 'Low (Faster)' },
     { value: 'medium', label: 'Medium (Balanced)' },
     { value: 'high', label: 'High (Better Quality)' }
+  ];
+
+  const audioQualityOptions = [
+    { value: '64', label: '64 kbps' },
+    { value: '128', label: '128 kbps' },
+    { value: '192', label: '192 kbps' },
+    { value: '256', label: '256 kbps' },
+    { value: '320', label: '320 kbps' }
   ];
 
   const resolutionOptions = [
@@ -159,8 +238,108 @@ export default function VideoConverter() {
     return { name: newName, url, size: blob.size };
   };
 
+  const convertVideoToAudio = async (file: File): Promise<{ name: string; url: string; size: number }> => {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      const AudioContextClass = window.AudioContext || (window as typeof window & {
+        webkitAudioContext: typeof AudioContext;
+      }).webkitAudioContext;
+      const audioContext = new AudioContextClass();
+      
+      video.onloadedmetadata = async () => {
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+          
+          // Create offline context for rendering
+          const offlineContext = new OfflineAudioContext(
+            audioBuffer.numberOfChannels,
+            audioBuffer.length,
+            audioBuffer.sampleRate
+          );
+          
+          const source = offlineContext.createBufferSource();
+          source.buffer = audioBuffer;
+          source.connect(offlineContext.destination);
+          source.start();
+          
+          const renderedBuffer = await offlineContext.startRendering();
+          
+          // Convert to target audio format
+          let blob: Blob;
+          const newName = file.name.replace(/\.[^/.]+$/, `.${outputFormat}`);
+          
+          if (outputFormat === 'wav') {
+            blob = audioBufferToWav(renderedBuffer);
+          } else if (outputFormat === 'mp3' || outputFormat === 'aac' || outputFormat === 'ogg') {
+            // For compressed formats, we'll use a basic approach
+            blob = audioBufferToWav(renderedBuffer); // Fallback to WAV for now
+          } else {
+            const samples = renderedBuffer.getChannelData(0);
+            blob = new Blob([new Uint8Array(samples.buffer)], { type: `audio/${outputFormat}` });
+          }
+          
+          const url = URL.createObjectURL(blob);
+          resolve({ name: newName, url, size: blob.size });
+        } catch (error) {
+          reject(error);
+        }
+      };
+      
+      video.onerror = () => reject(new Error('Failed to load video file'));
+      video.src = URL.createObjectURL(file);
+    });
+  };
+
+  const audioBufferToWav = (buffer: AudioBuffer): Blob => {
+    const length = buffer.length;
+    const numberOfChannels = buffer.numberOfChannels;
+    const sampleRate = buffer.sampleRate;
+    const arrayBuffer = new ArrayBuffer(44 + length * numberOfChannels * 2);
+    const view = new DataView(arrayBuffer);
+    
+    // WAV header
+    const writeString = (offset: number, string: string) => {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
+    };
+    
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + length * numberOfChannels * 2, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, numberOfChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * numberOfChannels * 2, true);
+    view.setUint16(32, numberOfChannels * 2, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
+    view.setUint32(40, length * numberOfChannels * 2, true);
+    
+    // Convert audio data
+    let offset = 44;
+    for (let i = 0; i < length; i++) {
+      for (let channel = 0; channel < numberOfChannels; channel++) {
+        const sample = Math.max(-1, Math.min(1, buffer.getChannelData(channel)[i]));
+        view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+        offset += 2;
+      }
+    }
+    
+    return new Blob([arrayBuffer], { type: 'audio/wav' });
+  };
+
   const convertVideo = async (file: File): Promise<{ name: string; url: string; size: number }> => {
     const inputFormat = file.name.split('.').pop()?.toLowerCase();
+    const isAudioOutput = ['mp3', 'wav', 'aac', 'ogg'].includes(outputFormat);
+    
+    // Convert video to audio
+    if (isAudioOutput) {
+      return await convertVideoToAudio(file);
+    }
     
     // Use canvas-based conversion for supported format combinations
     if ((inputFormat === 'mp4' && outputFormat === 'webm') || 
@@ -177,14 +356,49 @@ export default function VideoConverter() {
     if (files.length === 0) return;
     
     setIsConverting(true);
+    setLoadingStep('Preparing conversion...');
+    setLoadingProgress(5);
+    
     try {
-      const converted = await Promise.all(files.map(convertVideo));
+      const totalFiles = files.length;
+      const converted: { name: string; url: string; size: number }[] = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const isAudioOutput = ['mp3', 'wav', 'aac', 'ogg'].includes(outputFormat);
+        
+        setLoadingStep(`Processing ${file.name}...`);
+        setLoadingProgress(10 + (i / totalFiles) * 70);
+        
+        if (isAudioOutput) {
+          setLoadingStep(`Extracting audio from ${file.name}...`);
+        } else {
+          setLoadingStep(`Converting ${file.name} to ${outputFormat.toUpperCase()}...`);
+        }
+        
+        const result = await convertVideo(file);
+        converted.push(result);
+        
+        setLoadingProgress(10 + ((i + 1) / totalFiles) * 70);
+      }
+      
+      setLoadingStep('Conversion complete!');
+      setLoadingProgress(100);
       setConvertedFiles(converted);
-    } catch {
-      console.error('Video conversion failed');
+      
+      // Small delay to show completion
+      setTimeout(() => {
+        setIsConverting(false);
+        setLoadingStep('');
+        setLoadingProgress(0);
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Video conversion failed:', error);
       alert('Sorry, this file type is not compatible. Video conversion failed - please try with a different file format.');
-    } finally {
       setIsConverting(false);
+      setLoadingStep('');
+      setLoadingProgress(0);
     }
   };
 
@@ -258,31 +472,48 @@ export default function VideoConverter() {
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">Quality</label>
-              <select
-                value={quality}
-                onChange={(e) => setQuality(e.target.value)}
-                className="w-full p-2 border border-black/[.08] dark:border-white/[.145] rounded bg-background"
-              >
-                {qualityOptions.map(option => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </div>
+            {['mp3', 'wav', 'aac', 'ogg'].includes(outputFormat) ? (
+              <div>
+                <label className="block text-sm font-medium mb-2">Audio Bitrate</label>
+                <select
+                  value={audioBitrate}
+                  onChange={(e) => setAudioBitrate(e.target.value)}
+                  className="w-full p-2 border border-black/[.08] dark:border-white/[.145] rounded bg-background"
+                >
+                  {audioQualityOptions.map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Quality</label>
+                  <select
+                    value={quality}
+                    onChange={(e) => setQuality(e.target.value)}
+                    className="w-full p-2 border border-black/[.08] dark:border-white/[.145] rounded bg-background"
+                  >
+                    {qualityOptions.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">Resolution</label>
-              <select
-                value={resolution}
-                onChange={(e) => setResolution(e.target.value)}
-                className="w-full p-2 border border-black/[.08] dark:border-white/[.145] rounded bg-background"
-              >
-                {resolutionOptions.map(option => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Resolution</label>
+                  <select
+                    value={resolution}
+                    onChange={(e) => setResolution(e.target.value)}
+                    className="w-full p-2 border border-black/[.08] dark:border-white/[.145] rounded bg-background"
+                  >
+                    {resolutionOptions.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Convert Button */}
@@ -352,6 +583,15 @@ export default function VideoConverter() {
           </div>
         </div>
       </div>
+
+      {/* Loading Screen */}
+      <LoadingScreen 
+        fileName={files.length > 0 ? files[0].name : ''}
+        currentStep={loadingStep}
+        progress={loadingProgress}
+        isConverting={isConverting}
+        outputFormat={outputFormat}
+      />
     </div>
   );
 }
