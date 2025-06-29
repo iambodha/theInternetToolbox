@@ -303,8 +303,6 @@ export default function PDFOCR() {
                 setLoadingProgress(Math.min(85, totalProgress));
               }
             },
-            tessedit_pageseg_mode: ocrMode === 'accurate' ? '1' : '6', // Auto or uniform block
-            tessedit_char_whitelist: undefined, // Allow all characters
           }
         );
 
