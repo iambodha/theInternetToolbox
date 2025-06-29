@@ -303,4 +303,50 @@ export class PDFUtils {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
+
+  // Add OCR text layer to PDF to make it searchable
+  static async addOCRTextLayer(
+    file: File, 
+    ocrData: { [pageNumber: number]: string }
+  ): Promise<Uint8Array> {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(arrayBuffer);
+    const pages = pdfDoc.getPages();
+    
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+    Object.entries(ocrData).forEach(([pageNumStr, text]) => {
+      const pageIndex = parseInt(pageNumStr) - 1;
+      if (pageIndex >= 0 && pageIndex < pages.length && text.trim()) {
+        const page = pages[pageIndex];
+        const { width, height } = page.getSize();
+        
+        // Split text into words and position them across the page
+        const words = text.split(/\s+/).filter(word => word.trim());
+        const wordsPerLine = Math.ceil(Math.sqrt(words.length));
+        const lineHeight = height / Math.ceil(words.length / wordsPerLine);
+        const wordWidth = width / wordsPerLine;
+        
+        words.forEach((word, index) => {
+          const line = Math.floor(index / wordsPerLine);
+          const position = index % wordsPerLine;
+          
+          const x = position * wordWidth;
+          const y = height - (line * lineHeight) - lineHeight;
+          
+          // Add invisible text layer (white text on white background)
+          page.drawText(word, {
+            x: Math.max(0, x),
+            y: Math.max(0, y),
+            size: 1, // Very small, almost invisible
+            font,
+            color: rgb(1, 1, 1), // White text (invisible on white background)
+            opacity: 0.01, // Almost transparent
+          });
+        });
+      }
+    });
+
+    return await pdfDoc.save();
+  }
 }

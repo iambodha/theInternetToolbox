@@ -41,6 +41,7 @@ export default function Home() {
     { name: 'Extract Pages', description: 'Extract specific pages from PDF', category: 'PDF Tools', route: '/pdf-extract-pages', icon: '📄' },
     { name: 'Delete Pages', description: 'Remove unwanted pages from PDF', category: 'PDF Tools', route: '/pdf-delete-pages', icon: '🗑️' },
     { name: 'Add Watermark', description: 'Add text or image watermarks to PDF', category: 'PDF Tools', route: '/pdf-watermark', icon: '💧' },
+    { name: 'PDF OCR', description: 'Extract text from scanned documents using OCR', category: 'PDF Tools', route: '/pdf-ocr', icon: '🔍' },
     
     // Text Tools
     { name: 'Text Formatter', description: 'Format and style text content', category: 'Text Tools', route: '/text-formatter', icon: '📝' },

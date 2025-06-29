@@ -11,6 +11,7 @@ import PDFRotator from './tools/PDFRotator';
 import PDFWatermark from './tools/PDFWatermark';
 import PDFPageExtractor from './tools/PDFPageExtractor';
 import PDFPageDeleter from './tools/PDFPageDeleter';
+import PDFOCR from './tools/PDFOCR';
 
 interface PDFTool {
   id: string;
@@ -30,6 +31,7 @@ const pdfTools: PDFTool[] = [
   { id: 'extract', title: 'Extract Pages', description: 'Extract specific pages from PDF', icon: '📄', category: 'organize', component: PDFPageExtractor },
   { id: 'delete', title: 'Delete Pages', description: 'Remove unwanted pages from PDF', icon: '🗑️', category: 'organize', component: PDFPageDeleter },
   { id: 'watermark', title: 'Add Watermark', description: 'Add text or image watermarks to PDF', icon: '💧', category: 'edit', component: PDFWatermark },
+  { id: 'ocr', title: 'PDF OCR', description: 'Extract text from scanned documents using OCR', icon: '🔍', category: 'edit', component: PDFOCR },
 ];
 
 const categories = [
