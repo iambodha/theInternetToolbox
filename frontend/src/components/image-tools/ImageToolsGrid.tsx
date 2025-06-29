@@ -8,13 +8,15 @@ import ImageConverter from './tools/ImageConverter';
 import ImageResizer from './tools/ImageResizer';
 import ImageOptimizer from './tools/ImageOptimizer';
 import BackgroundRemover from './tools/BackgroundRemover';
+import ImagePixelify from './tools/ImagePixelify';
+import ColorPaletteExtractor from './tools/ColorPaletteExtractor';
 
 interface ImageTool {
   id: string;
   title: string;
   description: string;
   icon: string;
-  category: 'convert' | 'edit' | 'optimize';
+  category: 'convert' | 'edit' | 'optimize' | 'analyze';
   component: React.ComponentType;
 }
 
@@ -25,9 +27,13 @@ const imageTools: ImageTool[] = [
   // Edit Tools
   { id: 'resizer', title: 'Image Resizer', description: 'Resize images by exact dimensions or percentage while maintaining quality', icon: '📏', category: 'edit', component: ImageResizer },
   { id: 'background-remover', title: 'Background Remover', description: 'Remove backgrounds from images to create transparent PNGs', icon: '✂️', category: 'edit', component: BackgroundRemover },
+  { id: 'pixelify', title: 'Image Pixelify', description: 'Transform images into retro pixel art with customizable effects', icon: '🎮', category: 'edit', component: ImagePixelify },
   
   // Optimize Tools
   { id: 'optimizer', title: 'Image Optimizer', description: 'Reduce image file sizes while maintaining visual quality', icon: '⚡', category: 'optimize', component: ImageOptimizer },
+
+  // Analyze Tools
+  { id: 'color-palette', title: 'Color Palette Extractor', description: 'Extract dominant colors and create color palettes from images', icon: '🎨', category: 'analyze', component: ColorPaletteExtractor },
 ];
 
 const categories = [
@@ -35,6 +41,7 @@ const categories = [
   { id: 'convert', name: 'Convert', count: imageTools.filter(t => t.category === 'convert').length },
   { id: 'edit', name: 'Edit & Transform', count: imageTools.filter(t => t.category === 'edit').length },
   { id: 'optimize', name: 'Optimize', count: imageTools.filter(t => t.category === 'optimize').length },
+  { id: 'analyze', name: 'Analyze', count: imageTools.filter(t => t.category === 'analyze').length },
 ];
 
 export default function ImageToolsGrid() {
