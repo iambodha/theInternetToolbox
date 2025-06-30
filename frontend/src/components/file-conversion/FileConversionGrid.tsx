@@ -751,8 +751,6 @@ export default function FileConversionGrid() {
     const [documentContent, setDocumentContent] = useState<string>('');
     const [documentLoaded, setDocumentLoaded] = useState(false);
     const [documentError, setDocumentError] = useState<string>('');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
 
     const isVideoFormat = category === 'video' || (category === 'audio' && ['mp4', 'webm', 'avi', 'mov'].includes(outputFormat));
     const isAudioFormat = category === 'audio' && !['mp4', 'webm', 'avi', 'mov'].includes(outputFormat);
@@ -760,12 +758,6 @@ export default function FileConversionGrid() {
     const isDocumentFormat = category === 'document';
 
     // Load document content when file changes
-    useEffect(() => {
-      if (isDocumentFormat && file.url) {
-        loadDocumentContent();
-      }
-    }, [file.url, isDocumentFormat]);
-
     const loadDocumentContent = async () => {
       try {
         setDocumentLoaded(false);
@@ -796,6 +788,12 @@ export default function FileConversionGrid() {
         setDocumentLoaded(true);
       }
     };
+
+    useEffect(() => {
+      if (isDocumentFormat && file.url) {
+        loadDocumentContent();
+      }
+    }, [file.url, isDocumentFormat, loadDocumentContent]);
 
     const handlePlayPause = () => {
       const mediaElement = isVideoFormat ? videoRef.current : audioRef.current;
@@ -878,9 +876,6 @@ export default function FileConversionGrid() {
                 <span>{imageDimensions.width} × {imageDimensions.height}px</span>
               )}
               {isImageFormat && <span>Zoom: {Math.round(zoom * 100)}%</span>}
-              {isDocumentFormat && totalPages > 1 && (
-                <span>Page {currentPage} of {totalPages}</span>
-              )}
             </div>
           </div>
           <div className="flex space-x-2">
@@ -1036,7 +1031,7 @@ export default function FileConversionGrid() {
                         </p>
                         <div className="space-y-2 text-sm text-foreground/50">
                           <p>• Download to view in Microsoft Word</p>
-                          <p>• Or use "Open Full" to try viewing in browser</p>
+                          <p>• Or use &quot;Open Full&quot; to try viewing in browser</p>
                           <p>• Convert to PDF for inline preview</p>
                         </div>
                       </div>
@@ -1075,7 +1070,7 @@ export default function FileConversionGrid() {
                           Successfully converted to {outputFormat.toUpperCase()}
                         </p>
                         <div className="space-y-2 text-sm text-foreground/50">
-                          <p>• Click "Download" to save the file</p>
+                          <p>• Click &quot;Download&quot; to save the file</p>
                           <p>• File size: {formatFileSize(file.size)}</p>
                           <p>• Format: {outputFormat.toUpperCase()}</p>
                         </div>
