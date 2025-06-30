@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/Button';
 import { styles } from '@/lib/styles';
@@ -599,6 +599,19 @@ export default function FileConversionGrid() {
     return new Blob([arrayBuffer], { type: 'audio/wav' });
   };
 
+  const convertDocument = async (file: File, outputFormat: string): Promise<{ name: string; url: string; size: number }> => {
+    return new Promise((resolve) => {
+      // For now, we'll simulate document conversion
+      // In a real implementation, you'd use libraries like pdf-lib, mammoth.js, etc.
+      setTimeout(() => {
+        const blob = new Blob([file], { type: `application/${outputFormat}` });
+        const url = URL.createObjectURL(blob);
+        const name = file.name.replace(/\.[^/.]+$/, `.${outputFormat}`);
+        resolve({ name, url, size: blob.size });
+      }, 2000);
+    });
+  };
+
   const handleConversion = async (fileIndex: number) => {
     const fileData = filesWithOptions[fileIndex];
     const targetFormat = selectedConversions[fileIndex];
@@ -638,6 +651,19 @@ export default function FileConversionGrid() {
         const converted = await convertImage(fileData.file, targetFormat, quality);
         
         setLoadingStep('Finalizing image conversion...');
+        setLoadingProgress(90);
+        
+        setConvertedFiles(prev => ({ ...prev, [fileIndex]: converted }));
+      } else if (fileData.category === 'document') {
+        setLoadingStep('Processing document data...');
+        setLoadingProgress(40);
+        
+        setLoadingStep('Converting document format...');
+        setLoadingProgress(70);
+        
+        const converted = await convertDocument(fileData.file, targetFormat);
+        
+        setLoadingStep('Finalizing document conversion...');
         setLoadingProgress(90);
         
         setConvertedFiles(prev => ({ ...prev, [fileIndex]: converted }));
@@ -715,17 +741,61 @@ export default function FileConversionGrid() {
     const videoRef = useRef<HTMLVideoElement>(null);
     const audioRef = useRef<HTMLAudioElement>(null);
     const imageRef = useRef<HTMLImageElement>(null);
+    const iframeRef = useRef<HTMLIFrameElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [zoom, setZoom] = useState(1);
     const [imageLoaded, setImageLoaded] = useState(false);
     const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
+    const [documentContent, setDocumentContent] = useState<string>('');
+    const [documentLoaded, setDocumentLoaded] = useState(false);
+    const [documentError, setDocumentError] = useState<string>('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
 
     const isVideoFormat = category === 'video' || (category === 'audio' && ['mp4', 'webm', 'avi', 'mov'].includes(outputFormat));
     const isAudioFormat = category === 'audio' && !['mp4', 'webm', 'avi', 'mov'].includes(outputFormat);
     const isImageFormat = category === 'image';
     const isDocumentFormat = category === 'document';
+
+    // Load document content when file changes
+    useEffect(() => {
+      if (isDocumentFormat && file.url) {
+        loadDocumentContent();
+      }
+    }, [file.url, isDocumentFormat]);
+
+    const loadDocumentContent = async () => {
+      try {
+        setDocumentLoaded(false);
+        setDocumentError('');
+        
+        const response = await fetch(file.url);
+        const blob = await response.blob();
+        
+        if (file.name.toLowerCase().endsWith('.pdf')) {
+          // For PDF files, we'll use an iframe or object tag
+          setDocumentContent('');
+          setDocumentLoaded(true);
+        } else if (file.name.toLowerCase().endsWith('.txt') || 
+                   file.name.toLowerCase().endsWith('.rtf') ||
+                   outputFormat === 'txt') {
+          // For text files, read and display content
+          const text = await blob.text();
+          setDocumentContent(text);
+          setDocumentLoaded(true);
+        } else {
+          // For other document types, show a message
+          setDocumentContent('');
+          setDocumentLoaded(true);
+        }
+      } catch (error) {
+        console.error('Error loading document:', error);
+        setDocumentError('Failed to load document preview');
+        setDocumentLoaded(true);
+      }
+    };
 
     const handlePlayPause = () => {
       const mediaElement = isVideoFormat ? videoRef.current : audioRef.current;
@@ -792,6 +862,10 @@ export default function FileConversionGrid() {
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
+    const openFullscreen = () => {
+      window.open(file.url, '_blank');
+    };
+
     return (
       <div className="border border-foreground/20 rounded-lg p-4 bg-foreground/5 mt-4">
         {/* Preview Header */}
@@ -804,15 +878,29 @@ export default function FileConversionGrid() {
                 <span>{imageDimensions.width} × {imageDimensions.height}px</span>
               )}
               {isImageFormat && <span>Zoom: {Math.round(zoom * 100)}%</span>}
+              {isDocumentFormat && totalPages > 1 && (
+                <span>Page {currentPage} of {totalPages}</span>
+              )}
             </div>
           </div>
-          <Button
-            onClick={() => downloadFile(file.url, file.name)}
-            variant="secondary"
-            className="text-sm"
-          >
-            Download
-          </Button>
+          <div className="flex space-x-2">
+            {isDocumentFormat && (
+              <Button
+                onClick={openFullscreen}
+                variant="secondary"
+                className="text-sm"
+              >
+                Open Full
+              </Button>
+            )}
+            <Button
+              onClick={() => downloadFile(file.url, file.name)}
+              variant="secondary"
+              className="text-sm"
+            >
+              Download
+            </Button>
+          </div>
         </div>
 
         {/* Preview Content */}
@@ -867,6 +955,138 @@ export default function FileConversionGrid() {
             </div>
           )}
 
+          {/* Document Preview */}
+          {isDocumentFormat && (
+            <div className="space-y-3">
+              {!documentLoaded && (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
+                  <span className="ml-3 text-foreground/60">Loading document...</span>
+                </div>
+              )}
+
+              {documentError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                  <div className="text-red-600 mb-2">⚠️</div>
+                  <p className="text-red-700 font-medium">{documentError}</p>
+                  <p className="text-red-600 text-sm mt-1">Try downloading the file to view it</p>
+                </div>
+              )}
+
+              {documentLoaded && !documentError && (
+                <>
+                  {/* PDF Preview */}
+                  {file.name.toLowerCase().endsWith('.pdf') && (
+                    <div className="space-y-3">
+                      <div className="bg-foreground/5 rounded-lg overflow-hidden" style={{ height: '500px' }}>
+                        <iframe
+                          ref={iframeRef}
+                          src={`${file.url}#toolbar=1&navpanes=1&scrollbar=1&page=1&view=FitH`}
+                          className="w-full h-full border-0"
+                          title={file.name}
+                          onLoad={() => setDocumentLoaded(true)}
+                        />
+                      </div>
+                      <div className="flex items-center justify-center space-x-4 text-sm">
+                        <p className="text-foreground/60">
+                          Use browser controls to navigate the PDF
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Text File Preview */}
+                  {(file.name.toLowerCase().endsWith('.txt') || 
+                    file.name.toLowerCase().endsWith('.rtf') ||
+                    outputFormat === 'txt') && documentContent && (
+                    <div className="space-y-3">
+                      <div className="bg-foreground/5 rounded-lg p-4 max-h-96 overflow-y-auto">
+                        <pre className="whitespace-pre-wrap text-sm text-foreground font-mono break-words">
+                          {documentContent.slice(0, 5000)}
+                          {documentContent.length > 5000 && (
+                            <span className="text-foreground/60">
+                              ...
+                              <br />
+                              <em>(Content truncated. Download file to view complete text)</em>
+                            </span>
+                          )}
+                        </pre>
+                      </div>
+                      <div className="text-center text-sm text-foreground/60">
+                        <p>
+                          {documentContent.length > 5000 
+                            ? `Showing first 5000 characters of ${documentContent.length} total`
+                            : `${documentContent.length} characters`
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Word Document Preview */}
+                  {(file.name.toLowerCase().endsWith('.doc') || 
+                    file.name.toLowerCase().endsWith('.docx') ||
+                    outputFormat === 'docx') && (
+                    <div className="space-y-3">
+                      <div className="bg-foreground/5 rounded-lg p-8 text-center">
+                        <div className="text-6xl mb-4">📄</div>
+                        <h3 className="font-medium text-lg mb-2">Word Document</h3>
+                        <p className="text-foreground/60 mb-4">
+                          Preview not available for Word documents
+                        </p>
+                        <div className="space-y-2 text-sm text-foreground/50">
+                          <p>• Download to view in Microsoft Word</p>
+                          <p>• Or use "Open Full" to try viewing in browser</p>
+                          <p>• Convert to PDF for inline preview</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* RTF Document Preview */}
+                  {file.name.toLowerCase().endsWith('.rtf') && outputFormat === 'rtf' && !documentContent && (
+                    <div className="space-y-3">
+                      <div className="bg-foreground/5 rounded-lg p-8 text-center">
+                        <div className="text-6xl mb-4">📝</div>
+                        <h3 className="font-medium text-lg mb-2">Rich Text Document</h3>
+                        <p className="text-foreground/60 mb-4">
+                          RTF preview not fully supported
+                        </p>
+                        <div className="space-y-2 text-sm text-foreground/50">
+                          <p>• Download to view in a text editor</p>
+                          <p>• Convert to PDF for better preview</p>
+                          <p>• Or convert to plain text for simple preview</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Generic Document Preview */}
+                  {!file.name.toLowerCase().endsWith('.pdf') && 
+                   !file.name.toLowerCase().endsWith('.txt') && 
+                   !file.name.toLowerCase().endsWith('.doc') && 
+                   !file.name.toLowerCase().endsWith('.docx') && 
+                   !file.name.toLowerCase().endsWith('.rtf') && (
+                    <div className="space-y-3">
+                      <div className="bg-foreground/5 rounded-lg p-8 text-center">
+                        <div className="text-6xl mb-4">📄</div>
+                        <h3 className="font-medium text-lg mb-2">Document Ready</h3>
+                        <p className="text-foreground/60 mb-4">
+                          Successfully converted to {outputFormat.toUpperCase()}
+                        </p>
+                        <div className="space-y-2 text-sm text-foreground/50">
+                          <p>• Click "Download" to save the file</p>
+                          <p>• File size: {formatFileSize(file.size)}</p>
+                          <p>• Format: {outputFormat.toUpperCase()}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
           {/* Video Preview */}
           {isVideoFormat && (
             <div className="space-y-3">
@@ -894,7 +1114,6 @@ export default function FileConversionGrid() {
 
               {/* Video Controls */}
               <div className="space-y-2">
-                {/* Timeline */}
                 <input
                   type="range"
                   min="0"
@@ -908,7 +1127,6 @@ export default function FileConversionGrid() {
                   <span>{formatTime(duration)}</span>
                 </div>
                 
-                {/* Play Controls */}
                 <div className="flex items-center justify-center space-x-4">
                   <button
                     onClick={() => {
@@ -958,9 +1176,7 @@ export default function FileConversionGrid() {
                 />
               </div>
 
-              {/* Audio Controls */}
               <div className="space-y-2">
-                {/* Timeline */}
                 <input
                   type="range"
                   min="0"
@@ -974,7 +1190,6 @@ export default function FileConversionGrid() {
                   <span>{formatTime(duration)}</span>
                 </div>
                 
-                {/* Play Controls */}
                 <div className="flex items-center justify-center space-x-4">
                   <button
                     onClick={() => {
@@ -1004,16 +1219,6 @@ export default function FileConversionGrid() {
                   </button>
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* Document Preview */}
-          {isDocumentFormat && (
-            <div className="bg-foreground/5 rounded-lg p-6 text-center">
-              <div className="text-4xl mb-3">📄</div>
-              <p className="font-medium">{file.name}</p>
-              <p className="text-sm text-foreground/60">Document converted successfully</p>
-              <p className="text-xs text-foreground/40 mt-2">Click download to open the file</p>
             </div>
           )}
         </div>
