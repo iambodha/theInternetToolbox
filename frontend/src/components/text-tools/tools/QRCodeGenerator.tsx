@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import Image from 'next/image';
 
 export default function QRCodeGenerator() {
   const [inputText, setInputText] = useState('');
@@ -39,7 +40,7 @@ export default function QRCodeGenerator() {
       canvas.width = qrSize;
       canvas.height = qrSize;
 
-      const img = new Image();
+      const img = new window.Image();
       img.crossOrigin = 'anonymous';
       
       img.onload = () => {
@@ -342,11 +343,14 @@ export default function QRCodeGenerator() {
 
           <div className="flex justify-center">
             <div className="p-4 bg-white rounded-lg shadow-lg">
-              <img
+              <Image
                 src={qrCodeUrl}
                 alt="Generated QR Code"
+                width={qrSize}
+                height={qrSize}
                 className="max-w-full h-auto"
                 style={{ imageRendering: 'pixelated' }}
+                unoptimized={true}
               />
             </div>
           </div>
