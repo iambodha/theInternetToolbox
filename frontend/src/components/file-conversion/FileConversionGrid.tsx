@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/Button';
 import { styles } from '@/lib/styles';
 
@@ -393,7 +394,7 @@ export default function FileConversionGrid() {
     return new Promise((resolve) => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      const img = new Image();
+      const img = document.createElement('img');
 
       img.onload = () => {
         canvas.width = img.width;
@@ -706,6 +707,320 @@ export default function FileConversionGrid() {
     document.body.removeChild(a);
   };
 
+  const InlinePreviewPlayer = ({ file, category, outputFormat }: {
+    file: { name: string; url: string; size: number };
+    category: 'image' | 'document' | 'audio' | 'video';
+    outputFormat: string;
+  }) => {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const audioRef = useRef<HTMLAudioElement>(null);
+    const imageRef = useRef<HTMLImageElement>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const [zoom, setZoom] = useState(1);
+    const [imageLoaded, setImageLoaded] = useState(false);
+    const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
+
+    const isVideoFormat = category === 'video' || (category === 'audio' && ['mp4', 'webm', 'avi', 'mov'].includes(outputFormat));
+    const isAudioFormat = category === 'audio' && !['mp4', 'webm', 'avi', 'mov'].includes(outputFormat);
+    const isImageFormat = category === 'image';
+    const isDocumentFormat = category === 'document';
+
+    const handlePlayPause = () => {
+      const mediaElement = isVideoFormat ? videoRef.current : audioRef.current;
+      if (mediaElement) {
+        if (isPlaying) {
+          mediaElement.pause();
+        } else {
+          mediaElement.play();
+        }
+        setIsPlaying(!isPlaying);
+      }
+    };
+
+    const handleTimeUpdate = () => {
+      const mediaElement = isVideoFormat ? videoRef.current : audioRef.current;
+      if (mediaElement) {
+        setCurrentTime(mediaElement.currentTime);
+        setDuration(mediaElement.duration || 0);
+      }
+    };
+
+    const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const mediaElement = isVideoFormat ? videoRef.current : audioRef.current;
+      const newTime = parseFloat(e.target.value);
+      if (mediaElement) {
+        mediaElement.currentTime = newTime;
+        setCurrentTime(newTime);
+      }
+    };
+
+    const handleImageLoad = () => {
+      setImageLoaded(true);
+      if (imageRef.current) {
+        setImageDimensions({
+          width: imageRef.current.naturalWidth,
+          height: imageRef.current.naturalHeight
+        });
+      }
+    };
+
+    const handleZoomIn = () => {
+      setZoom(prev => Math.min(prev * 1.2, 3));
+    };
+
+    const handleZoomOut = () => {
+      setZoom(prev => Math.max(prev / 1.2, 0.3));
+    };
+
+    const resetZoom = () => {
+      setZoom(1);
+    };
+
+    const formatTime = (time: number) => {
+      const minutes = Math.floor(time / 60);
+      const seconds = Math.floor(time % 60);
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    };
+
+    const formatFileSize = (bytes: number) => {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    };
+
+    return (
+      <div className="border border-foreground/20 rounded-lg p-4 bg-foreground/5 mt-4">
+        {/* Preview Header */}
+        <div className="flex items-center justify-between mb-4 pb-3 border-b border-foreground/10">
+          <div>
+            <h4 className="font-medium text-foreground">Preview: {file.name}</h4>
+            <div className="flex items-center space-x-4 text-sm text-foreground/60 mt-1">
+              <span>{formatFileSize(file.size)}</span>
+              {imageDimensions && (
+                <span>{imageDimensions.width} × {imageDimensions.height}px</span>
+              )}
+              {isImageFormat && <span>Zoom: {Math.round(zoom * 100)}%</span>}
+            </div>
+          </div>
+          <Button
+            onClick={() => downloadFile(file.url, file.name)}
+            variant="secondary"
+            className="text-sm"
+          >
+            Download
+          </Button>
+        </div>
+
+        {/* Preview Content */}
+        <div className="space-y-4">
+          {/* Image Preview */}
+          {isImageFormat && (
+            <div className="space-y-3">
+              <div className="relative bg-foreground/5 rounded-lg overflow-hidden flex items-center justify-center min-h-[200px] max-h-[400px]">
+                {!imageLoaded && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
+                  </div>
+                )}
+                <Image
+                  ref={imageRef}
+                  src={file.url}
+                  alt={file.name}
+                  width={800}
+                  height={600}
+                  onLoad={handleImageLoad}
+                  className="max-w-full max-h-full object-contain transition-transform duration-200 cursor-grab active:cursor-grabbing"
+                  style={{
+                    transform: `scale(${zoom})`,
+                    opacity: imageLoaded ? 1 : 0
+                  }}
+                  draggable={false}
+                  unoptimized
+                />
+              </div>
+              
+              {/* Image Zoom Controls */}
+              <div className="flex items-center justify-center space-x-2">
+                <button
+                  onClick={handleZoomOut}
+                  className="px-3 py-1 bg-foreground/10 hover:bg-foreground/20 rounded text-sm transition-colors"
+                >
+                  −
+                </button>
+                <button
+                  onClick={resetZoom}
+                  className="px-3 py-1 bg-foreground/10 hover:bg-foreground/20 rounded text-sm transition-colors"
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={handleZoomIn}
+                  className="px-3 py-1 bg-foreground/10 hover:bg-foreground/20 rounded text-sm transition-colors"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Video Preview */}
+          {isVideoFormat && (
+            <div className="space-y-3">
+              <div className="relative bg-black rounded-lg overflow-hidden">
+                <video
+                  ref={videoRef}
+                  src={file.url}
+                  onTimeUpdate={handleTimeUpdate}
+                  onLoadedMetadata={handleTimeUpdate}
+                  onEnded={() => setIsPlaying(false)}
+                  className="w-full max-h-[300px] object-contain"
+                  controls={false}
+                />
+                {!isPlaying && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                    <button
+                      onClick={handlePlayPause}
+                      className="text-white text-4xl hover:scale-110 transition-transform"
+                    >
+                      ▶️
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Video Controls */}
+              <div className="space-y-2">
+                {/* Timeline */}
+                <input
+                  type="range"
+                  min="0"
+                  max={duration || 0}
+                  value={currentTime}
+                  onChange={handleSeek}
+                  className="w-full h-2 bg-foreground/20 rounded-lg appearance-none cursor-pointer"
+                />
+                <div className="flex justify-between text-sm text-foreground/60">
+                  <span>{formatTime(currentTime)}</span>
+                  <span>{formatTime(duration)}</span>
+                </div>
+                
+                {/* Play Controls */}
+                <div className="flex items-center justify-center space-x-4">
+                  <button
+                    onClick={() => {
+                      if (videoRef.current) {
+                        videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 10);
+                      }
+                    }}
+                    className="text-foreground/70 hover:text-foreground text-lg"
+                  >
+                    ⏪
+                  </button>
+                  <button
+                    onClick={handlePlayPause}
+                    className="bg-foreground text-background rounded-full w-10 h-10 flex items-center justify-center hover:bg-foreground/90 transition-colors"
+                  >
+                    {isPlaying ? '⏸️' : '▶️'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (videoRef.current) {
+                        videoRef.current.currentTime = Math.min(duration, videoRef.current.currentTime + 10);
+                      }
+                    }}
+                    className="text-foreground/70 hover:text-foreground text-lg"
+                  >
+                    ⏩
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Audio Preview */}
+          {isAudioFormat && (
+            <div className="space-y-3">
+              <div className="bg-foreground/5 rounded-lg p-6 text-center">
+                <div className="text-4xl mb-3">🎵</div>
+                <p className="font-medium">{file.name}</p>
+                <p className="text-sm text-foreground/60">Audio Preview</p>
+                <audio
+                  ref={audioRef}
+                  src={file.url}
+                  onTimeUpdate={handleTimeUpdate}
+                  onLoadedMetadata={handleTimeUpdate}
+                  onEnded={() => setIsPlaying(false)}
+                  className="hidden"
+                />
+              </div>
+
+              {/* Audio Controls */}
+              <div className="space-y-2">
+                {/* Timeline */}
+                <input
+                  type="range"
+                  min="0"
+                  max={duration || 0}
+                  value={currentTime}
+                  onChange={handleSeek}
+                  className="w-full h-2 bg-foreground/20 rounded-lg appearance-none cursor-pointer"
+                />
+                <div className="flex justify-between text-sm text-foreground/60">
+                  <span>{formatTime(currentTime)}</span>
+                  <span>{formatTime(duration)}</span>
+                </div>
+                
+                {/* Play Controls */}
+                <div className="flex items-center justify-center space-x-4">
+                  <button
+                    onClick={() => {
+                      if (audioRef.current) {
+                        audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 10);
+                      }
+                    }}
+                    className="text-foreground/70 hover:text-foreground text-lg"
+                  >
+                    ⏪
+                  </button>
+                  <button
+                    onClick={handlePlayPause}
+                    className="bg-foreground text-background rounded-full w-10 h-10 flex items-center justify-center hover:bg-foreground/90 transition-colors"
+                  >
+                    {isPlaying ? '⏸️' : '▶️'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (audioRef.current) {
+                        audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + 10);
+                      }
+                    }}
+                    className="text-foreground/70 hover:text-foreground text-lg"
+                  >
+                    ⏩
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Document Preview */}
+          {isDocumentFormat && (
+            <div className="bg-foreground/5 rounded-lg p-6 text-center">
+              <div className="text-4xl mb-3">📄</div>
+              <p className="font-medium">{file.name}</p>
+              <p className="text-sm text-foreground/60">Document converted successfully</p>
+              <p className="text-xs text-foreground/40 mt-2">Click download to open the file</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className={styles.spacing.section}>
       {/* File Upload */}
@@ -817,24 +1132,22 @@ export default function FileConversionGrid() {
 
                 {/* Convert Button */}
                 {selectedConversions[index] && (
-                  <div className="flex items-center space-x-3">
-                    <Button
-                      onClick={() => handleConversion(index)}
-                      disabled={isConverting}
-                      variant="primary"
-                    >
-                      {isConverting ? 'Converting...' : `Convert to ${selectedConversions[index].toUpperCase()}`}
-                    </Button>
-                    
-                    {convertedFiles[index] && (
-                      <Button
-                        onClick={() => downloadFile(convertedFiles[index].url, convertedFiles[index].name)}
-                        variant="secondary"
-                      >
-                        Download {convertedFiles[index].name}
-                      </Button>
-                    )}
-                  </div>
+                  <Button
+                    onClick={() => handleConversion(index)}
+                    disabled={isConverting}
+                    variant="primary"
+                  >
+                    {isConverting ? 'Converting...' : `Convert to ${selectedConversions[index].toUpperCase()}`}
+                  </Button>
+                )}
+
+                {/* Inline Preview */}
+                {convertedFiles[index] && (
+                  <InlinePreviewPlayer
+                    file={convertedFiles[index]}
+                    category={fileData.category}
+                    outputFormat={selectedConversions[index]}
+                  />
                 )}
               </div>
             </div>

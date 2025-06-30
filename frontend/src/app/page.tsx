@@ -74,6 +74,9 @@ export default function Home() {
     { name: 'Audio Converter', description: 'Convert audio files to different formats', category: 'File Conversion', route: '/audio-converter', icon: '🎵' },
     { name: 'Video Converter', description: 'Convert video files to different formats', category: 'File Conversion', route: '/video-converter', icon: '🎬' },
     
+    //QR Code Generator
+    { name: 'QR Code Generator', description: 'Generate QR codes for URLs, text, WiFi, and more', category: 'Text Tools', route: '/qr-generator', icon: '📱' },
+    
     // File Corruption Tools
     { name: 'File Corruptor', description: 'Create corrupted files with custom sizes', category: 'File Corruption', route: '/file-corruptor', icon: '🔧' },
   ];
