@@ -758,7 +758,7 @@ export default function FileConversionGrid() {
     const isDocumentFormat = category === 'document';
 
     // Load document content when file changes
-    const loadDocumentContent = async () => {
+    const loadDocumentContent = useCallback(async () => {
       try {
         setDocumentLoaded(false);
         setDocumentError('');
@@ -787,7 +787,7 @@ export default function FileConversionGrid() {
         setDocumentError('Failed to load document preview');
         setDocumentLoaded(true);
       }
-    };
+    }, [file.url, file.name, outputFormat]);
 
     useEffect(() => {
       if (isDocumentFormat && file.url) {

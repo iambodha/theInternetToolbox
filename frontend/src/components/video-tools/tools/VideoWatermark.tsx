@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import VideoPreview from '../VideoPreview';
 
 export default function VideoWatermark() {
   const [file, setFile] = useState<File | null>(null);
@@ -589,21 +590,21 @@ export default function VideoWatermark() {
       {/* Watermarked Video */}
       {watermarkedVideo && (
         <div className="space-y-4">
-          <h3 className="font-medium">Watermarked Video</h3>
-          <div className="p-4 bg-foreground/5 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">{watermarkedVideo.name}</p>
-                <p className="text-xs text-foreground/60">{formatFileSize(watermarkedVideo.size)}</p>
-              </div>
-              <button
-                onClick={() => downloadFile(watermarkedVideo.url, watermarkedVideo.name)}
-                className="px-4 py-2 bg-foreground text-background rounded hover:bg-foreground/90 transition-colors text-sm"
-              >
-                Download
-              </button>
-            </div>
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium">Watermarked Video</h3>
+            <button
+              onClick={() => downloadFile(watermarkedVideo.url, watermarkedVideo.name)}
+              className="px-4 py-2 bg-foreground text-background rounded hover:bg-foreground/90 transition-colors text-sm"
+            >
+              Download
+            </button>
           </div>
+          <VideoPreview
+            file={watermarkedVideo}
+            onDownload={downloadFile}
+            title={`Watermarked Video: ${watermarkedVideo.name}`}
+            subtitle={`Watermark "${watermarkText}" added at ${watermarkPosition} position with ${watermarkOpacity}% opacity`}
+          />
         </div>
       )}
 

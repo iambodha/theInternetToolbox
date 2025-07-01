@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import NextImage from 'next/image';
+import ImagePreview from '../ImagePreview';
 
 const supportedFormats = {
   input: ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'tiff'],
@@ -303,25 +303,13 @@ export default function ImagePixelify() {
               Download All
             </button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4">
             {pixelifiedFiles.map((file, index) => (
-              <div key={index} className="border border-foreground/20 rounded-lg p-3">
-                {file.preview && (
-                  <div className="mb-3">
-                    <NextImage
-                      src={file.preview}
-                      alt={`Pixelified ${file.name}`}
-                      width={400}
-                      height={128}
-                      className="w-full h-32 object-contain bg-gray-100 dark:bg-gray-800 rounded"
-                      style={{ imageRendering: 'pixelated' }}
-                    />
-                  </div>
-                )}
-                <div className="flex items-center justify-between">
+              <div key={index}>
+                <div className="flex items-center justify-between p-3 bg-foreground/5 rounded-lg mb-2">
                   <div>
                     <p className="text-sm font-medium">{file.name}</p>
-                    <p className="text-xs text-foreground/60">{formatFileSize(file.size)}</p>
+                    <p className="text-xs text-foreground/60">{formatFileSize(file.size)} • Pixelified with {pixelSize}px blocks</p>
                   </div>
                   <button
                     onClick={() => downloadFile(file.url, file.name)}
@@ -330,6 +318,12 @@ export default function ImagePixelify() {
                     Download
                   </button>
                 </div>
+                <ImagePreview
+                  file={file}
+                  onDownload={downloadFile}
+                  title={`Pixelified Image: ${file.name}`}
+                  subtitle={`Transformed into ${pixelSize}px pixel art ${colorReduction ? `with ${colorLevels} color levels` : ''}`}
+                />
               </div>
             ))}
           </div>

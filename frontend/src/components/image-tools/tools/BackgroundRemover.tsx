@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import ImagePreview from '../ImagePreview';
 
 const supportedFormats = {
   input: ['jpg', 'jpeg', 'png', 'bmp', 'webp'],
@@ -281,19 +282,27 @@ export default function BackgroundRemover() {
               Download All
             </button>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-4">
             {processedFiles.map((file, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-foreground/5 rounded-lg">
-                <div>
-                  <p className="text-sm font-medium">{file.name}</p>
-                  <p className="text-xs text-foreground/60">{(file.size / (1024 * 1024)).toFixed(2)} MB • PNG with transparency</p>
+              <div key={index}>
+                <div className="flex items-center justify-between p-3 bg-foreground/5 rounded-lg mb-2">
+                  <div>
+                    <p className="text-sm font-medium">{file.name}</p>
+                    <p className="text-xs text-foreground/60">{(file.size / (1024 * 1024)).toFixed(2)} MB • PNG with transparency</p>
+                  </div>
+                  <button
+                    onClick={() => downloadFile(file.url, file.name)}
+                    className="px-3 py-1 bg-foreground text-background rounded text-sm hover:bg-foreground/90 transition-colors"
+                  >
+                    Download
+                  </button>
                 </div>
-                <button
-                  onClick={() => downloadFile(file.url, file.name)}
-                  className="px-3 py-1 bg-foreground text-background rounded text-sm hover:bg-foreground/90 transition-colors"
-                >
-                  Download
-                </button>
+                <ImagePreview
+                  file={file}
+                  onDownload={downloadFile}
+                  title={`Background Removed: ${file.name}`}
+                  subtitle="Background removed with transparency support"
+                />
               </div>
             ))}
           </div>

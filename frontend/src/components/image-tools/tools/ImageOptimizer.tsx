@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import ImagePreview from '../ImagePreview';
 
 const supportedFormats = {
   input: ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'tiff'],
@@ -272,24 +273,32 @@ export default function ImageOptimizer() {
               Download All
             </button>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-4">
             {optimizedFiles.map((file, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-foreground/5 rounded-lg">
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{file.name}</p>
-                  <div className="flex items-center space-x-4 text-xs text-foreground/60">
-                    <span>{formatFileSize(file.originalSize)} → {formatFileSize(file.size)}</span>
-                    <span className="text-green-600 dark:text-green-400 font-medium">
-                      -{file.savings.toFixed(1)}%
-                    </span>
+              <div key={index}>
+                <div className="flex items-center justify-between p-3 bg-foreground/5 rounded-lg mb-2">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{file.name}</p>
+                    <div className="flex items-center space-x-4 text-xs text-foreground/60">
+                      <span>{formatFileSize(file.originalSize)} → {formatFileSize(file.size)}</span>
+                      <span className="text-green-600 dark:text-green-400 font-medium">
+                        -{file.savings.toFixed(1)}%
+                      </span>
+                    </div>
                   </div>
+                  <button
+                    onClick={() => downloadFile(file.url, file.name)}
+                    className="px-3 py-1 bg-foreground text-background rounded text-sm hover:bg-foreground/90 transition-colors"
+                  >
+                    Download
+                  </button>
                 </div>
-                <button
-                  onClick={() => downloadFile(file.url, file.name)}
-                  className="px-3 py-1 bg-foreground text-background rounded text-sm hover:bg-foreground/90 transition-colors"
-                >
-                  Download
-                </button>
+                <ImagePreview
+                  file={file}
+                  onDownload={downloadFile}
+                  title={`Optimized Image: ${file.name}`}
+                  subtitle={`File size reduced by ${file.savings.toFixed(1)}% (${formatFileSize(file.originalSize - file.size)} saved)`}
+                />
               </div>
             ))}
           </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import VideoPreview from '../VideoPreview';
 
 export default function VideoCompressor() {
   const [file, setFile] = useState<File | null>(null);
@@ -626,25 +627,21 @@ export default function VideoCompressor() {
       {/* Compressed Video */}
       {compressedVideo && (
         <div className="space-y-4">
-          <h3 className="font-medium">Compressed Video</h3>
-          <div className="p-4 bg-foreground/5 rounded-lg">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <p className="text-sm font-medium">{compressedVideo.name}</p>
-                <p className="text-xs text-foreground/60">{formatFileSize(compressedVideo.size)}</p>
-              </div>
-              <button
-                onClick={() => downloadFile(compressedVideo.url, compressedVideo.name)}
-                className="px-4 py-2 bg-foreground text-background rounded hover:bg-foreground/90 transition-colors text-sm"
-              >
-                Download
-              </button>
-            </div>
-            <div className="text-xs text-green-600 dark:text-green-400 font-medium">
-              ✓ Reduced by {compressedVideo.compressionRatio.toFixed(1)}% 
-              ({formatFileSize(file!.size - compressedVideo.size)} saved)
-            </div>
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium">Compressed Video</h3>
+            <button
+              onClick={() => downloadFile(compressedVideo.url, compressedVideo.name)}
+              className="px-4 py-2 bg-foreground text-background rounded hover:bg-foreground/90 transition-colors text-sm"
+            >
+              Download
+            </button>
           </div>
+          <VideoPreview
+            file={compressedVideo}
+            onDownload={downloadFile}
+            title={`Compressed Video: ${compressedVideo.name}`}
+            subtitle={`Reduced by ${compressedVideo.compressionRatio.toFixed(1)}% (${formatFileSize(file!.size - compressedVideo.size)} saved)`}
+          />
         </div>
       )}
 

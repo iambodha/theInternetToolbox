@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import VideoPreview from '../VideoPreview';
 
 interface VideoLoadingScreenProps {
   fileName: string;
@@ -645,21 +646,21 @@ export default function VideoTrimmer() {
       {/* Trimmed Video */}
       {trimmedVideo && (
         <div className="space-y-4">
-          <h3 className="font-medium">Trimmed Video</h3>
-          <div className="p-4 bg-foreground/5 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">{trimmedVideo.name}</p>
-                <p className="text-xs text-foreground/60">{formatFileSize(trimmedVideo.size)}</p>
-              </div>
-              <button
-                onClick={() => downloadFile(trimmedVideo.url, trimmedVideo.name)}
-                className="px-4 py-2 bg-foreground text-background rounded hover:bg-foreground/90 transition-colors text-sm"
-              >
-                Download
-              </button>
-            </div>
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium">Trimmed Video</h3>
+            <button
+              onClick={() => downloadFile(trimmedVideo.url, trimmedVideo.name)}
+              className="px-4 py-2 bg-foreground text-background rounded hover:bg-foreground/90 transition-colors text-sm"
+            >
+              Download
+            </button>
           </div>
+          <VideoPreview
+            file={trimmedVideo}
+            onDownload={downloadFile}
+            title={`Trimmed Video: ${trimmedVideo.name}`}
+            subtitle={`Trimmed from ${formatTimestamp(startTime)} to ${formatTimestamp(endTime)} (${formatTimestamp(trimDuration)} duration)`}
+          />
         </div>
       )}
 

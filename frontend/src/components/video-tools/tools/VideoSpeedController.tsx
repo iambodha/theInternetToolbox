@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import VideoPreview from '../VideoPreview';
 
 interface VideoLoadingScreenProps {
   fileName: string;
@@ -633,21 +634,21 @@ export default function VideoSpeedController() {
       {/* Processed Video */}
       {processedVideo && (
         <div className="space-y-4">
-          <h3 className="font-medium">Speed-Adjusted Video</h3>
-          <div className="p-4 bg-foreground/5 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">{processedVideo.name}</p>
-                <p className="text-xs text-foreground/60">{formatFileSize(processedVideo.size)}</p>
-              </div>
-              <button
-                onClick={() => downloadFile(processedVideo.url, processedVideo.name)}
-                className="px-4 py-2 bg-foreground text-background rounded hover:bg-foreground/90 transition-colors text-sm"
-              >
-                Download
-              </button>
-            </div>
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium">Speed Adjusted Video</h3>
+            <button
+              onClick={() => downloadFile(processedVideo.url, processedVideo.name)}
+              className="px-4 py-2 bg-foreground text-background rounded hover:bg-foreground/90 transition-colors text-sm"
+            >
+              Download
+            </button>
           </div>
+          <VideoPreview
+            file={processedVideo}
+            onDownload={downloadFile}
+            title={`Speed Adjusted Video: ${processedVideo.name}`}
+            subtitle={`Video speed ${speed < 1 ? 'slowed down' : 'sped up'} to ${speed}x${videoMetadata ? ` (${formatDuration(videoMetadata.duration / speed)} duration)` : ''}`}
+          />
         </div>
       )}
 

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
+import VideoPreview from '../VideoPreview';
 
 interface VideoLoadingScreenProps {
   fileName: string;
@@ -484,24 +485,47 @@ export default function VideoFrameExtractor() {
               Download All
             </button>
           </div>
+          
+          {/* Show original video for reference */}
+          {file && (
+            <div className="mb-6">
+              <h4 className="font-medium mb-2">Source Video</h4>
+              <VideoPreview
+                file={{ 
+                  name: file.name, 
+                  url: URL.createObjectURL(file), 
+                  size: file.size 
+                }}
+                onDownload={() => {}}
+                showDownload={false}
+                title={`Source Video: ${file.name}`}
+                subtitle={`Extracted ${extractedFrames.length} frames from this video`}
+              />
+            </div>
+          )}
 
+          {/* Extracted frames grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {extractedFrames.map((frame, index) => (
-              <div key={index} className="bg-foreground/5 rounded-lg p-3">
-                <div className="aspect-video bg-background rounded mb-2 overflow-hidden">
+              <div key={index} className="border border-foreground/20 rounded-lg p-3 bg-foreground/5">
+                <div className="mb-3">
                   <Image
                     src={frame.url}
                     alt={`Frame at ${formatDuration(frame.timestamp)}`}
-                    className="w-full h-full object-cover"
-                    width={videoMetadata?.width || 1920}
-                    height={videoMetadata?.height || 1080}
+                    width={200}
+                    height={96}
+                    className="w-full h-24 object-cover rounded bg-gray-100 dark:bg-gray-800"
+                    unoptimized
                   />
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-medium truncate">{frame.name}</p>
-                  <p className="text-xs text-foreground/60">
-                    {formatDuration(frame.timestamp)} • {formatFileSize(frame.size)}
-                  </p>
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">{frame.name}</div>
+                  <div className="text-xs text-foreground/60">
+                    Time: {formatDuration(frame.timestamp)}
+                  </div>
+                  <div className="text-xs text-foreground/60">
+                    Size: {formatFileSize(frame.size)}
+                  </div>
                   <button
                     onClick={() => downloadFrame(frame.url, frame.name)}
                     className="w-full px-2 py-1 bg-foreground text-background rounded text-xs hover:bg-foreground/90 transition-colors"

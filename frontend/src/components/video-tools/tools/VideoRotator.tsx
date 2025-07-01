@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import VideoPreview from '../VideoPreview';
 
 interface VideoLoadingScreenProps {
   fileName: string;
@@ -627,21 +628,21 @@ export default function VideoRotator() {
       {/* Rotated Video */}
       {rotatedVideo && (
         <div className="space-y-4">
-          <h3 className="font-medium">Rotated Video</h3>
-          <div className="p-4 bg-foreground/5 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">{rotatedVideo.name}</p>
-                <p className="text-xs text-foreground/60">{formatFileSize(rotatedVideo.size)}</p>
-              </div>
-              <button
-                onClick={() => downloadFile(rotatedVideo.url, rotatedVideo.name)}
-                className="px-4 py-2 bg-foreground text-background rounded hover:bg-foreground/90 transition-colors text-sm"
-              >
-                Download
-              </button>
-            </div>
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium">Rotated Video</h3>
+            <button
+              onClick={() => downloadFile(rotatedVideo.url, rotatedVideo.name)}
+              className="px-4 py-2 bg-foreground text-background rounded hover:bg-foreground/90 transition-colors text-sm"
+            >
+              Download
+            </button>
           </div>
+          <VideoPreview
+            file={rotatedVideo}
+            onDownload={downloadFile}
+            title={`Rotated Video: ${rotatedVideo.name}`}
+            subtitle={`Video rotated ${rotation}°`}
+          />
         </div>
       )}
 
