@@ -26,7 +26,7 @@ function LoadingScreen({ fileName, pageCount, currentStep, progress }: LoadingSc
         <div className="text-center space-y-6">
           {/* PDF Icon Animation */}
           <div className="relative">
-            <div className="text-6xl animate-pulse">📄</div>
+            <div className="text-6xl animate-pulse">✂️</div>
             <div className="absolute inset-0 animate-spin">
               <div className="w-20 h-20 mx-auto border-4 border-transparent border-t-foreground rounded-full"></div>
             </div>
@@ -136,6 +136,71 @@ function PagePreview({
   );
 }
 
+// Preview component for final result
+interface ResultPreviewProps {
+  splitRanges: SplitRange[];
+  fileName: string;
+  onDownload: (rangeId: number) => void;
+}
+
+function ResultPreview({ splitRanges, fileName, onDownload }: ResultPreviewProps) {
+  return (
+    <div className="border border-foreground/20 rounded-lg p-6 bg-foreground/5 mt-6">
+      <div className="flex items-center justify-between mb-4 pb-3 border-b border-foreground/10">
+        <div>
+          <h4 className="font-medium text-foreground">Split Result Preview</h4>
+          <p className="text-sm text-foreground/60 mt-1">
+            {splitRanges.length} files will be created from {fileName}
+          </p>
+        </div>
+        <div className="text-sm text-foreground/60">
+          Total pages: {splitRanges.reduce((sum, range) => sum + (range.end - range.start + 1), 0)}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {splitRanges.map((range, index) => (
+          <div
+            key={range.id}
+            className="flex items-center justify-between p-3 bg-background rounded-lg border border-foreground/10 hover:bg-foreground/5 transition-colors"
+          >
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-foreground/10 rounded-full flex items-center justify-center text-sm font-medium">
+                {index + 1}
+              </div>
+              <div>
+                <p className="font-medium text-sm">
+                  {range.name}
+                </p>
+                <p className="text-xs text-foreground/60">
+                  Pages {range.start}-{range.end} ({range.end - range.start + 1} page{range.end - range.start + 1 !== 1 ? 's' : ''})
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-xs text-foreground/50">
+                {fileName.replace('.pdf', '')}_pages_{range.start}-{range.end}.pdf
+              </span>
+              <button
+                onClick={() => onDownload(range.id)}
+                className="px-3 py-1 bg-foreground text-background rounded text-xs hover:bg-foreground/90 transition-colors"
+              >
+                Download
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 pt-3 border-t border-foreground/10 text-center">
+        <p className="text-sm text-foreground/60">
+          💡 Tip: You can drag and drop files after splitting to reorder them
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function PDFSplitter() {
   const [file, setFile] = useState<PDFFile | null>(null);
   const [pagePreviews, setPagePreviews] = useState<string[]>([]);
@@ -146,6 +211,7 @@ export default function PDFSplitter() {
   const [splitMode, setSplitMode] = useState<'parts' | 'single'>('parts');
   const [loadingStep, setLoadingStep] = useState('');
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [splitResults, setSplitResults] = useState<{[key: number]: Uint8Array}>({});
 
   // Color palette for different ranges
   const rangeColors = [
@@ -234,22 +300,52 @@ export default function PDFSplitter() {
   });
 
   const getPageRangeInfo = (pageNumber: number) => {
-    const range = splitRanges.find(r => pageNumber >= r.start && pageNumber <= r.end);
-    if (!range) return { inRange: false, rangeColor: '', isStart: false, isEnd: false };
-    
-    const colorIndex = splitRanges.indexOf(range) % rangeColors.length;
+    for (let i = 0; i < splitRanges.length; i++) {
+      const range = splitRanges[i];
+      if (pageNumber >= range.start && pageNumber <= range.end) {
+        return {
+          inRange: true,
+          isStart: pageNumber === range.start,
+          isEnd: pageNumber === range.end,
+          rangeColor: rangeColors[i % rangeColors.length],
+        };
+      }
+    }
     return {
-      inRange: true,
-      rangeColor: rangeColors[colorIndex],
-      isStart: pageNumber === range.start,
-      isEnd: pageNumber === range.end,
+      inRange: false,
+      isStart: false,
+      isEnd: false,
+      rangeColor: '#gray',
     };
   };
 
-  const updateRange = (id: number, field: keyof SplitRange, value: string | number) => {
+  const updateRange = (id: number, field: 'start' | 'end', value: number) => {
     setSplitRanges(prev => prev.map(range => 
       range.id === id ? { ...range, [field]: value } : range
     ));
+  };
+
+  const addRange = () => {
+    const newId = Math.max(...splitRanges.map(r => r.id), 0) + 1;
+    const lastRange = splitRanges[splitRanges.length - 1];
+    const newStart = lastRange ? lastRange.end + 1 : 1;
+    const maxEnd = file?.pageCount || 1;
+    
+    if (newStart <= maxEnd) {
+      const newRange: SplitRange = {
+        id: newId,
+        start: newStart,
+        end: Math.min(newStart + 9, maxEnd), // Default 10-page range
+        name: `Part ${splitRanges.length + 1}`,
+      };
+      setSplitRanges(prev => [...prev, newRange]);
+    }
+  };
+
+  const removeRange = (id: number) => {
+    if (splitRanges.length > 1) {
+      setSplitRanges(prev => prev.filter(range => range.id !== id));
+    }
   };
 
   const splitPDF = async () => {
@@ -274,15 +370,15 @@ export default function PDFSplitter() {
       setLoadingStep('Generating download files...');
       setLoadingProgress(80);
       
+      // Store results for preview
+      const results: {[key: number]: Uint8Array} = {};
       splitPDFs.forEach((pdfData, index) => {
         const range = validRanges[index];
-        const filename = range.start === range.end 
-          ? `${file.name.replace('.pdf', '')}_page_${range.start}.pdf`
-          : `${file.name.replace('.pdf', '')}_pages_${range.start}-${range.end}.pdf`;
-        PDFUtils.downloadFile(pdfData, filename);
+        results[range.id] = pdfData;
       });
-
-      setLoadingStep('Downloads complete!');
+      setSplitResults(results);
+      
+      setLoadingStep('Split complete!');
       setLoadingProgress(100);
       
       setTimeout(() => {
@@ -354,6 +450,18 @@ export default function PDFSplitter() {
     }
   };
 
+  const downloadSplitFile = (rangeId: number) => {
+    const range = splitRanges.find(r => r.id === rangeId);
+    const pdfData = splitResults[rangeId];
+    
+    if (range && pdfData && file) {
+      const filename = range.start === range.end 
+        ? `${file.name.replace('.pdf', '')}_page_${range.start}.pdf`
+        : `${file.name.replace('.pdf', '')}_pages_${range.start}-${range.end}.pdf`;
+      PDFUtils.downloadFile(pdfData, filename);
+    }
+  };
+
   const splitIntoParts = () => {
     if (!file || numberOfParts < 1) return;
     
@@ -401,13 +509,13 @@ export default function PDFSplitter() {
       >
         <input {...getInputProps()} />
         <div className="space-y-4">
-          <div className="text-4xl">📄</div>
+          <div className="text-4xl">✂️</div>
           <div>
             <p className="text-lg font-medium mb-2">
               {isDragActive ? 'Drop PDF file here' : 'Drag & drop a PDF file here'}
             </p>
             <p className="text-sm text-foreground/60">
-              or click to select a file • Only one PDF file at a time
+              or click to select a file • Split PDF into multiple files
             </p>
           </div>
         </div>
@@ -462,20 +570,20 @@ export default function PDFSplitter() {
                         : 'text-foreground/60 hover:text-foreground hover:bg-foreground/10'
                     }`}
                   >
-                    Single Pages
+                    Individual Pages
                   </button>
                 </div>
 
-                {/* Split into Parts */}
+                {/* Parts Mode */}
                 {splitMode === 'parts' && (
                   <div className="space-y-4">
-                    <div className="p-4 bg-foreground/5 border border-foreground/10 rounded-lg space-y-4">
-                      <div className="flex items-center gap-4">
-                        <label className="text-sm font-medium">Number of parts:</label>
+                    <div className="flex items-center space-x-4 p-4 bg-foreground/5 border border-foreground/10 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <label className="text-sm font-medium">Split into:</label>
                         <input
                           type="number"
                           value={numberOfParts}
-                          onChange={(e) => setNumberOfParts(Math.max(1, Math.min(parseInt(e.target.value) || 1, file.pageCount || 1)))}
+                          onChange={(e) => setNumberOfParts(Math.max(1, parseInt(e.target.value) || 1))}
                           className="w-20 px-3 py-2 bg-background border border-foreground/20 rounded-lg text-sm text-center"
                           min="1"
                           max={file.pageCount}
@@ -547,50 +655,54 @@ export default function PDFSplitter() {
               {splitRanges.length > 0 && splitMode === 'parts' && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-md font-medium">Split Ranges ({splitRanges.length} files will be created)</h4>
+                    <h4 className="text-md font-medium">Split Configuration</h4>
                     <button
-                      onClick={() => setSplitRanges([])}
-                      className="px-3 py-1 bg-foreground/10 hover:bg-foreground/20 text-foreground rounded-lg text-sm transition-colors"
+                      onClick={addRange}
+                      className="px-3 py-1 bg-foreground/10 hover:bg-foreground/20 rounded text-sm transition-colors"
                     >
-                      Clear All
+                      Add Range
                     </button>
                   </div>
-
+                  
                   <div className="space-y-3">
                     {splitRanges.map((range, index) => {
-                      const colorIndex = index % rangeColors.length;
-                      const rangeColor = rangeColors[colorIndex];
-                      
+                      const rangeColor = rangeColors[index % rangeColors.length];
                       return (
-                        <div key={range.id} className="flex items-center space-x-3 p-3 bg-foreground/5 border border-foreground/10 rounded-lg border-l-4" style={{ borderLeftColor: rangeColor }}>
-                          <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: rangeColor }}></div>
-                          <input
-                            type="text"
-                            value={range.name}
-                            onChange={(e) => updateRange(range.id, 'name', e.target.value)}
-                            className="flex-1 px-3 py-2 bg-background border border-foreground/20 rounded-lg text-sm"
-                            placeholder="Range name"
-                          />
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm text-foreground/60">Pages:</span>
-                            <input
-                              type="number"
-                              value={range.start}
-                              onChange={(e) => updateRange(range.id, 'start', parseInt(e.target.value) || 1)}
-                              className="w-16 px-2 py-1 bg-background border border-foreground/20 rounded text-sm text-center"
-                              min="1"
-                              max={file.pageCount}
-                            />
-                            <span className="text-foreground/60">-</span>
-                            <input
-                              type="number"
-                              value={range.end}
-                              onChange={(e) => updateRange(range.id, 'end', parseInt(e.target.value) || 1)}
-                              className="w-16 px-2 py-1 bg-background border border-foreground/20 rounded text-sm text-center"
-                              min="1"
-                              max={file.pageCount}
-                            />
+                        <div
+                          key={range.id}
+                          className="flex items-center justify-between p-3 bg-foreground/5 rounded-lg border border-foreground/10"
+                          style={{ borderLeftColor: rangeColor, borderLeftWidth: '4px' }}
+                        >
+                          <div className="flex items-center space-x-4">
+                            <div className="text-sm font-medium">{range.name}</div>
+                            <div className="flex items-center space-x-2 text-sm">
+                              <span>Pages:</span>
+                              <input
+                                type="number"
+                                value={range.start}
+                                onChange={(e) => updateRange(range.id, 'start', parseInt(e.target.value) || 1)}
+                                className="w-16 px-2 py-1 bg-background border border-foreground/20 rounded text-sm text-center"
+                                min="1"
+                                max={file.pageCount}
+                              />
+                              <span>to</span>
+                              <input
+                                type="number"
+                                value={range.end}
+                                onChange={(e) => updateRange(range.id, 'end', parseInt(e.target.value) || 1)}
+                                className="w-16 px-2 py-1 bg-background border border-foreground/20 rounded text-sm text-center"
+                                min="1"
+                                max={file.pageCount}
+                              />
+                            </div>
                           </div>
+                          <button
+                            onClick={() => removeRange(range.id)}
+                            className="text-red-500 hover:text-red-700 text-sm"
+                            disabled={splitRanges.length === 1}
+                          >
+                            ✕
+                          </button>
                         </div>
                       );
                     })}
@@ -609,6 +721,15 @@ export default function PDFSplitter() {
                     {isProcessing ? 'Splitting PDF...' : `Split into ${splitRanges.length} Files`}
                   </button>
                 </div>
+              )}
+
+              {/* Result Preview */}
+              {Object.keys(splitResults).length > 0 && (
+                <ResultPreview
+                  splitRanges={splitRanges}
+                  fileName={file.name}
+                  onDownload={downloadSplitFile}
+                />
               )}
             </div>
           )}
