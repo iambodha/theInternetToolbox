@@ -1,0 +1,159 @@
+'use client';
+
+import { useState } from 'react';
+import { styles } from '@/lib/styles';
+import ReactionTime from './tools/ReactionTime';
+import NumberMemory from './tools/NumberMemory';
+
+interface BenchmarkTool {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  category: 'reaction' | 'memory' | 'typing' | 'visual';
+  component: React.ComponentType;
+}
+
+const benchmarkTools: BenchmarkTool[] = [
+  // Reaction Tests
+  { id: 'reaction-time', title: 'Reaction Time', description: 'Test how quickly you can react to visual stimuli', icon: '⚡', category: 'reaction', component: ReactionTime },
+  
+  // Memory Tests
+  { id: 'number-memory', title: 'Number Memory', description: 'How many digits can you remember in sequence?', icon: '🧠', category: 'memory', component: NumberMemory },
+];
+
+const categories = [
+  { id: 'all', name: 'All Tests', count: benchmarkTools.length },
+  { id: 'reaction', name: 'Reaction', count: benchmarkTools.filter(t => t.category === 'reaction').length },
+  { id: 'memory', name: 'Memory', count: benchmarkTools.filter(t => t.category === 'memory').length },
+  { id: 'typing', name: 'Typing', count: benchmarkTools.filter(t => t.category === 'typing').length },
+  { id: 'visual', name: 'Visual', count: benchmarkTools.filter(t => t.category === 'visual').length },
+];
+
+export default function HumanBenchmarksGrid() {
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedTool, setSelectedTool] = useState<string | null>(null);
+
+  const filteredTools = selectedCategory === 'all' 
+    ? benchmarkTools 
+    : benchmarkTools.filter(tool => tool.category === selectedCategory);
+
+  const selectedToolComponent = benchmarkTools.find(tool => tool.id === selectedTool);
+
+  if (selectedTool && selectedToolComponent) {
+    const ToolComponent = selectedToolComponent.component;
+    return (
+      <div className={styles.layout.container}>
+        {/* Back button */}
+        <button
+          onClick={() => setSelectedTool(null)}
+          className={styles.button.back}
+        >
+          <span>←</span>
+          <span>Back to Human Benchmarks</span>
+        </button>
+
+        {/* Tool header */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center space-x-3 mb-4">
+            <span className="text-4xl">{selectedToolComponent.icon}</span>
+            <h2 className={styles.toolTitle.title}>
+              {selectedToolComponent.title}
+            </h2>
+          </div>
+          <p className={styles.toolTitle.description}>
+            {selectedToolComponent.description}
+          </p>
+        </div>
+
+        {/* Tool component */}
+        <ToolComponent />
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.layout.container}>
+      {/* Category filters */}
+      <div className={styles.grid.filters}>
+        {categories.map((category) => (
+          <button
+            key={category.id}
+            onClick={() => setSelectedCategory(category.id)}
+            className={`${styles.button.filter} ${
+              selectedCategory === category.id
+                ? styles.button.filterActive
+                : styles.button.filterInactive
+            }`}
+          >
+            {category.name} ({category.count})
+          </button>
+        ))}
+      </div>
+
+      {/* Tools grid */}
+      <div className={styles.grid.tools}>
+        {filteredTools.map((tool) => (
+          <div
+            key={tool.id}
+            onClick={() => setSelectedTool(tool.id)}
+            className={styles.card.base}
+          >
+            <div className={styles.card.content}>
+              <div className={styles.card.header}>
+                <div className={styles.card.icon}>{tool.icon}</div>
+                <div>
+                  <h3 className={styles.card.title}>{tool.title}</h3>
+                </div>
+              </div>
+              <p className={styles.card.description}>{tool.description}</p>
+              <div className={styles.card.footer}>
+                <span className={styles.card.category}>{tool.category}</span>
+                <span className={styles.card.arrow}>→</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Feature highlights */}
+      <div className={styles.grid.features}>
+        <div className={`${styles.feature.container} ${styles.colorVariants.blue.container}`}>
+          <div className={`${styles.feature.iconContainer} ${styles.colorVariants.blue.iconBg}`}>
+            <span className={styles.feature.icon}>🎯</span>
+          </div>
+          <h3 className={`${styles.feature.title} ${styles.colorVariants.blue.title}`}>
+            Precise Measurements
+          </h3>
+          <p className={`${styles.feature.description} ${styles.colorVariants.blue.description}`}>
+            High-precision timing and scoring systems for accurate benchmarking
+          </p>
+        </div>
+
+        <div className={`${styles.feature.container} ${styles.colorVariants.green.container}`}>
+          <div className={`${styles.feature.iconContainer} ${styles.colorVariants.green.iconBg}`}>
+            <span className={styles.feature.icon}>📊</span>
+          </div>
+          <h3 className={`${styles.feature.title} ${styles.colorVariants.green.title}`}>
+            Performance Tracking
+          </h3>
+          <p className={`${styles.feature.description} ${styles.colorVariants.green.description}`}>
+            Track your progress and compare with global averages
+          </p>
+        </div>
+
+        <div className={`${styles.feature.container} ${styles.colorVariants.purple.container}`}>
+          <div className={`${styles.feature.iconContainer} ${styles.colorVariants.purple.iconBg}`}>
+            <span className={styles.feature.icon}>🧠</span>
+          </div>
+          <h3 className={`${styles.feature.title} ${styles.colorVariants.purple.title}`}>
+            Cognitive Training
+          </h3>
+          <p className={`${styles.feature.description} ${styles.colorVariants.purple.description}`}>
+            Improve your mental performance with regular practice
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
