@@ -77,6 +77,12 @@ export default function Home() {
     //QR Code Generator
     { name: 'QR Code Generator', description: 'Generate QR codes for URLs, text, WiFi, and more', category: 'Text Tools', route: '/qr-generator', icon: '📱' },
     
+    // Human Benchmarks
+    { name: 'Reaction Time Test', description: 'Test how quickly you can react to visual stimuli', category: 'Human Benchmarks', route: '/human-benchmarks', icon: '⚡' },
+    { name: 'Number Memory Test', description: 'How many digits can you remember in sequence?', category: 'Human Benchmarks', route: '/human-benchmarks', icon: '🧠' },
+    { name: 'Typing Speed Test', description: 'Test your typing speed and accuracy', category: 'Human Benchmarks', route: '/human-benchmarks', icon: '⌨️' },
+    { name: 'Visual Memory Test', description: 'Test your ability to remember visual patterns', category: 'Human Benchmarks', route: '/human-benchmarks', icon: '👁️' },
+    
     // File Corruption Tools
     { name: 'File Corruptor', description: 'Create corrupted files with custom sizes', category: 'File Corruption', route: '/file-corruptor', icon: '🔧' },
   ];
@@ -201,6 +207,18 @@ export default function Home() {
         "Video Compressor",
       ],
       href: "/video-tools",
+    },
+    {
+      title: "Human Benchmarks",
+      description: "Test and improve your cognitive skills",
+      icon: "🧠",
+      tools: [
+        "Reaction Time Test",
+        "Number Memory Test",
+        "Typing Speed Test",
+        "Visual Memory Test",
+      ],
+      href: "/human-benchmarks",
     },
     {
       title: "File Corruption",

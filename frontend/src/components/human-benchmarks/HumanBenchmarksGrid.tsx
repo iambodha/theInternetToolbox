@@ -4,6 +4,10 @@ import { useState } from 'react';
 import { styles } from '@/lib/styles';
 import ReactionTime from './tools/ReactionTime';
 import NumberMemory from './tools/NumberMemory';
+import TypingSpeed from './tools/TypingSpeed';
+import SequenceMemory from './tools/SequenceMemory';
+import VisualAcuity from './tools/VisualAcuity';
+import VerbalMemory from './tools/VerbalMemory';
 
 interface BenchmarkTool {
   id: string;
@@ -20,6 +24,14 @@ const benchmarkTools: BenchmarkTool[] = [
   
   // Memory Tests
   { id: 'number-memory', title: 'Number Memory', description: 'How many digits can you remember in sequence?', icon: '🧠', category: 'memory', component: NumberMemory },
+  { id: 'sequence-memory', title: 'Sequence Memory', description: 'Remember and repeat visual sequences that get longer', icon: '🔢', category: 'memory', component: SequenceMemory },
+  { id: 'verbal-memory', title: 'Verbal Memory', description: 'Remember words and identify if you\'ve seen them before', icon: '📝', category: 'memory', component: VerbalMemory },
+  
+  // Typing Tests
+  { id: 'typing-speed', title: 'Typing Speed', description: 'Test your typing speed and accuracy with real text', icon: '⌨️', category: 'typing', component: TypingSpeed },
+  
+  // Visual Tests
+  { id: 'visual-acuity', title: 'Visual Acuity', description: 'Test how well you can see small details and symbols', icon: '👁️', category: 'visual', component: VisualAcuity },
 ];
 
 const categories = [
@@ -114,45 +126,6 @@ export default function HumanBenchmarksGrid() {
             </div>
           </div>
         ))}
-      </div>
-
-      {/* Feature highlights */}
-      <div className={styles.grid.features}>
-        <div className={`${styles.feature.container} ${styles.colorVariants.blue.container}`}>
-          <div className={`${styles.feature.iconContainer} ${styles.colorVariants.blue.iconBg}`}>
-            <span className={styles.feature.icon}>🎯</span>
-          </div>
-          <h3 className={`${styles.feature.title} ${styles.colorVariants.blue.title}`}>
-            Precise Measurements
-          </h3>
-          <p className={`${styles.feature.description} ${styles.colorVariants.blue.description}`}>
-            High-precision timing and scoring systems for accurate benchmarking
-          </p>
-        </div>
-
-        <div className={`${styles.feature.container} ${styles.colorVariants.green.container}`}>
-          <div className={`${styles.feature.iconContainer} ${styles.colorVariants.green.iconBg}`}>
-            <span className={styles.feature.icon}>📊</span>
-          </div>
-          <h3 className={`${styles.feature.title} ${styles.colorVariants.green.title}`}>
-            Performance Tracking
-          </h3>
-          <p className={`${styles.feature.description} ${styles.colorVariants.green.description}`}>
-            Track your progress and compare with global averages
-          </p>
-        </div>
-
-        <div className={`${styles.feature.container} ${styles.colorVariants.purple.container}`}>
-          <div className={`${styles.feature.iconContainer} ${styles.colorVariants.purple.iconBg}`}>
-            <span className={styles.feature.icon}>🧠</span>
-          </div>
-          <h3 className={`${styles.feature.title} ${styles.colorVariants.purple.title}`}>
-            Cognitive Training
-          </h3>
-          <p className={`${styles.feature.description} ${styles.colorVariants.purple.description}`}>
-            Improve your mental performance with regular practice
-          </p>
-        </div>
       </div>
     </div>
   );
