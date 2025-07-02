@@ -633,7 +633,7 @@ export default function TypingSpeed() {
             <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
               <h4 className="text-lg font-semibold mb-4 dark:text-white">Live Performance</h4>
               <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={realTimeStats.map((stat, _) => ({ 
+                <LineChart data={realTimeStats.map((stat) => ({ 
                   second: stat.timestamp,
                   wpm: stat.wpm, 
                   accuracy: stat.accuracy 

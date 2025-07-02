@@ -323,7 +323,7 @@ export default function VisualAcuity() {
 
           <div className={`text-center ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
             {currentSize < 5 ? 
-              "🔍 Incredible! You\u0027re in superhuman territory!" :
+              "🔍 Incredible! You&#39;re in superhuman territory!" :
               currentSize < 10 ? 
               "⭐ Amazing visual acuity!" :
               `Identify the ${currentModeData.name.toLowerCase()} symbol above`
@@ -403,7 +403,7 @@ export default function VisualAcuity() {
                 <p className={`text-sm mt-1 ${
                   isDark ? 'text-yellow-300' : 'text-yellow-700'
                 }`}>
-                  You've achieved superhuman visual acuity with {currentModeData.name}. This is extremely rare!
+                  You&#39;ve achieved superhuman visual acuity with {currentModeData.name}. This is extremely rare!
                 </p>
               </div>
             )}
