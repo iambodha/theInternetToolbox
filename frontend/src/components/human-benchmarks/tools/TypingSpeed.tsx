@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { styles } from '@/lib/styles';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 // Word lists for different modes
 const commonWords = [
@@ -338,32 +338,47 @@ export default function TypingSpeed() {
 
   const currentStats = calculateCurrentStats();
 
-  // Memoized text display with line-based scrolling
+  // Memoized text display with responsive line-based scrolling
   const textDisplay = useMemo(() => {
     if (!generatedText) return null;
     
-    // Split text into lines based on a reasonable character limit per line
-    const charactersPerLine = 100;
+    // Calculate responsive characters per line based on container width
+    // Estimate: ~10-11 characters per 100px width for monospace font at text-xl
+    const estimatedContainerWidth = typeof window !== 'undefined' ? Math.min(window.innerWidth - 200, 1000) : 700;
+    const charactersPerLine = Math.floor(estimatedContainerWidth / 10); // More conservative estimate
+    
     const words = generatedText.split(' ');
     const lines: string[] = [];
     let currentLine = '';
     
-    // Build lines by adding words until we reach character limit
+    // Build lines by adding words until we approach character limit
     for (const word of words) {
-      if (currentLine.length + word.length + 1 <= charactersPerLine) {
-        currentLine += (currentLine ? ' ' : '') + word;
+      // Check if adding this word would exceed the limit
+      const testLine = currentLine ? `${currentLine} ${word}` : word;
+      
+      if (testLine.length <= charactersPerLine) {
+        currentLine = testLine;
       } else {
-        if (currentLine) lines.push(currentLine);
+        // Only push current line if it has content
+        if (currentLine) {
+          lines.push(currentLine);
+        }
         currentLine = word;
       }
     }
-    if (currentLine) lines.push(currentLine);
+    
+    // Add the last line if it has content
+    if (currentLine) {
+      lines.push(currentLine);
+    }
     
     // Determine current line based on typed characters
     let charCount = 0;
     let currentLineIndex = 0;
+    
     for (let i = 0; i < lines.length; i++) {
-      if (currentIndex <= charCount + lines[i].length) {
+      const lineEndPosition = charCount + lines[i].length;
+      if (currentIndex <= lineEndPosition) {
         currentLineIndex = i;
         break;
       }
@@ -375,15 +390,15 @@ export default function TypingSpeed() {
     const startCharIndex = lines.slice(0, currentLineIndex).reduce((sum, line) => sum + line.length + 1, 0);
     
     return (
-      <div className="space-y-2">
+      <div className="space-y-3 w-full">
         {visibleLines.map((line, lineIdx) => {
           const lineStartIndex = startCharIndex + visibleLines.slice(0, lineIdx).reduce((sum, l) => sum + l.length + 1, 0);
-          const isCurrentLine = currentLineIndex + lineIdx === currentLineIndex;
           
           return (
             <div key={currentLineIndex + lineIdx} className={`
-              ${lineIdx === 0 ? 'text-lg' : lineIdx === 1 ? 'text-lg font-medium' : 'text-base opacity-60'}
-              transition-all duration-200
+              w-full leading-relaxed break-words
+              ${lineIdx === 0 ? 'text-xl font-normal' : lineIdx === 1 ? 'text-xl font-medium' : 'text-lg opacity-60'}
+              transition-all duration-200 ease-in-out
             `}>
               {line.split('').map((char, charIdx) => {
                 const actualIndex = lineStartIndex + charIdx;
@@ -393,11 +408,11 @@ export default function TypingSpeed() {
                     className={
                       actualIndex < currentIndex
                         ? typedText[actualIndex] === char
-                          ? 'text-green-600 bg-green-100 dark:bg-green-900'
-                          : 'text-red-600 bg-red-100 dark:bg-red-900'
+                          ? 'text-green-600 bg-green-100 dark:bg-green-900 rounded-sm'
+                          : 'text-red-600 bg-red-100 dark:bg-red-900 rounded-sm'
                         : actualIndex === currentIndex
-                        ? 'bg-blue-200 dark:bg-blue-700 animate-pulse'
-                        : 'text-gray-500'
+                        ? 'bg-blue-200 dark:bg-blue-700 animate-pulse rounded-sm'
+                        : 'text-gray-500 dark:text-gray-400'
                     }
                   >
                     {char}
@@ -436,7 +451,7 @@ export default function TypingSpeed() {
                 <label className="block text-sm font-medium mb-2">Mode</label>
                 <select
                   value={settings.mode}
-                  onChange={(e) => setSettings(prev => ({ ...prev, mode: e.target.value as any }))}
+                  onChange={(e) => setSettings(prev => ({ ...prev, mode: e.target.value as 'words' | 'random' | 'numbers' }))}
                   className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
                 >
                   <option value="words">Common Words</option>
@@ -450,7 +465,7 @@ export default function TypingSpeed() {
                 <label className="block text-sm font-medium mb-2">Test Type</label>
                 <select
                   value={settings.testType}
-                  onChange={(e) => setSettings(prev => ({ ...prev, testType: e.target.value as any }))}
+                  onChange={(e) => setSettings(prev => ({ ...prev, testType: e.target.value as 'duration' | 'wordCount' }))}
                   className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
                 >
                   <option value="duration">By Duration</option>
@@ -464,7 +479,7 @@ export default function TypingSpeed() {
                   <label className="block text-sm font-medium mb-2">Duration (seconds)</label>
                   <select
                     value={settings.duration}
-                    onChange={(e) => setSettings(prev => ({ ...prev, duration: parseInt(e.target.value) as any }))}
+                    onChange={(e) => setSettings(prev => ({ ...prev, duration: parseInt(e.target.value) as 15 | 30 | 60 | 120 }))}
                     className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
                   >
                     <option value={15}>15s</option>
@@ -481,7 +496,7 @@ export default function TypingSpeed() {
                   <label className="block text-sm font-medium mb-2">Word Count</label>
                   <select
                     value={settings.wordCount}
-                    onChange={(e) => setSettings(prev => ({ ...prev, wordCount: parseInt(e.target.value) as any }))}
+                    onChange={(e) => setSettings(prev => ({ ...prev, wordCount: parseInt(e.target.value) as 25 | 50 | 100 | 200 }))}
                     className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
                   >
                     <option value={25}>25 words</option>
@@ -618,7 +633,7 @@ export default function TypingSpeed() {
             <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
               <h4 className="text-lg font-semibold mb-4 dark:text-white">Live Performance</h4>
               <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={realTimeStats.map((stat, index) => ({ 
+                <LineChart data={realTimeStats.map((stat, _) => ({ 
                   second: stat.timestamp,
                   wpm: stat.wpm, 
                   accuracy: stat.accuracy 
@@ -766,8 +781,8 @@ export default function TypingSpeed() {
 
           {/* Recent Results */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {statsHistory.slice(-6).reverse().map((stat, index) => (
-              <div key={index} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+            {statsHistory.slice(-6).reverse().map((stat, statIndex) => (
+              <div key={statIndex} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                 <div className="flex justify-between items-center mb-2">
                   <span className="font-semibold">{stat.wpm} WPM</span>
                   <span className="text-sm text-gray-500">
