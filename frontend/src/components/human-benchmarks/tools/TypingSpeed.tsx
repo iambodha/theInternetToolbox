@@ -36,6 +36,7 @@ interface TypingStats {
 
 interface TestSettings {
   mode: 'words' | 'random' | 'numbers';
+  testType: 'duration' | 'wordCount';
   duration: 15 | 30 | 60 | 120;
   includePunctuation: boolean;
   includeNumbers: boolean;
@@ -55,6 +56,7 @@ export default function TypingSpeed() {
   const [realTimeStats, setRealTimeStats] = useState<TypingStats[]>([]);
   const [settings, setSettings] = useState<TestSettings>({
     mode: 'words',
+    testType: 'duration',
     duration: 30,
     includePunctuation: false,
     includeNumbers: false,
@@ -91,9 +93,18 @@ export default function TypingSpeed() {
         break;
     }
 
-    // Shuffle and select words
+    // Shuffle words
     const shuffled = words.sort(() => 0.5 - Math.random());
-    let selectedWords = shuffled.slice(0, settings.wordCount);
+    
+    // For duration tests, generate a large amount of words (infinite feel)
+    // For word count tests, use the specified word count
+    const wordCount = settings.testType === 'duration' ? 1000 : settings.wordCount;
+    let selectedWords = [];
+    
+    // Generate words by cycling through shuffled array if needed
+    for (let i = 0; i < wordCount; i++) {
+      selectedWords.push(shuffled[i % shuffled.length]);
+    }
 
     // Add punctuation if enabled
     if (settings.includePunctuation && settings.mode === 'words') {
@@ -125,9 +136,13 @@ export default function TypingSpeed() {
     if (!startTime || typedText.length === 0) return { wpm: 0, accuracy: 100 };
     
     const timeElapsed = (Date.now() - startTime) / 1000 / 60; // in minutes
-    const wordsTyped = typedText.split(' ').length;
-    const wpm = Math.round(wordsTyped / timeElapsed);
     
+    // Calculate WPM based on characters typed (standard: 5 characters = 1 word)
+    const charactersTyped = typedText.length;
+    const wordsTyped = charactersTyped / 5;
+    const wpm = timeElapsed > 0 ? Math.round(wordsTyped / timeElapsed) : 0;
+    
+    // Calculate accuracy
     let correctChars = 0;
     for (let i = 0; i < typedText.length; i++) {
       if (typedText[i] === generatedText[i]) {
@@ -135,43 +150,87 @@ export default function TypingSpeed() {
       }
     }
     
-    const accuracy = Math.round((correctChars / typedText.length) * 100);
+    const accuracy = typedText.length > 0 ? Math.round((correctChars / typedText.length) * 100) : 100;
     
-    return { wpm: Math.max(0, wpm), accuracy: Math.max(0, accuracy) };
+    return { wpm: Math.max(0, wpm), accuracy: Math.max(0, Math.min(100, accuracy)) };
   }, [startTime, typedText, generatedText]);
 
   // Start the test
   const startTest = () => {
     const text = generateText();
+    const testStartTime = Date.now();
+    
     setGeneratedText(text);
     setTypedText('');
     setCurrentIndex(0);
     setErrors(0);
     setIsStarted(true);
     setIsFinished(false);
-    setTimeLeft(settings.duration);
-    setStartTime(Date.now());
+    setStartTime(testStartTime);
     setRealTimeStats([]);
     
-    // Start timer
-    timerRef.current = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          finishTest();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    // Only start timer for duration-based tests
+    if (settings.testType === 'duration') {
+      setTimeLeft(settings.duration);
+      
+      timerRef.current = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            finishTest();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      // For word count tests, no timer needed
+      setTimeLeft(0);
+    }
 
     // Start real-time stats tracking
     statsIntervalRef.current = setInterval(() => {
-      const stats = calculateCurrentStats();
-      setRealTimeStats(prev => [...prev, {
-        ...stats,
-        errors,
-        timestamp: Date.now()
-      }]);
+      const timeElapsed = (Date.now() - testStartTime) / 1000 / 60; // in minutes
+      const timeElapsedSeconds = Math.floor((Date.now() - testStartTime) / 1000);
+      
+      // Get current typed text length and calculate stats
+      setRealTimeStats(prev => {
+        const currentTypedLength = inputRef.current?.value?.length || 0;
+        
+        if (currentTypedLength === 0) {
+          return [...prev, { wpm: 0, accuracy: 100, errors: 0, timestamp: timeElapsedSeconds }];
+        }
+        
+        // Calculate WPM based on characters typed (standard: 5 characters = 1 word)
+        const charactersTyped = currentTypedLength;
+        const wordsTyped = charactersTyped / 5;
+        const wpm = timeElapsed > 0 ? Math.round(wordsTyped / timeElapsed) : 0;
+        
+        // Calculate accuracy based on current input
+        const currentText = inputRef.current?.value || '';
+        let correctChars = 0;
+        for (let i = 0; i < currentText.length; i++) {
+          if (currentText[i] === text[i]) {
+            correctChars++;
+          }
+        }
+        
+        const accuracy = currentText.length > 0 ? Math.round((correctChars / currentText.length) * 100) : 100;
+        
+        // Count current errors
+        let currentErrors = 0;
+        for (let i = 0; i < currentText.length; i++) {
+          if (currentText[i] !== text[i]) {
+            currentErrors++;
+          }
+        }
+        
+        return [...prev, {
+          wpm: Math.max(0, wpm),
+          accuracy: Math.max(0, Math.min(100, accuracy)),
+          errors: currentErrors,
+          timestamp: timeElapsedSeconds
+        }];
+      });
     }, 1000);
 
     setTimeout(() => {
@@ -190,16 +249,45 @@ export default function TypingSpeed() {
       statsIntervalRef.current = null;
     }
 
-    const finalStats = calculateCurrentStats();
-    const newStats: TypingStats = {
-      ...finalStats,
-      errors,
-      timestamp: Date.now()
-    };
+    // Calculate final stats using current input value directly
+    const finalTypedText = inputRef.current?.value || typedText;
+    const timeElapsed = startTime ? (Date.now() - startTime) / 1000 / 60 : 0; // in minutes
+    
+    if (finalTypedText.length > 0 && timeElapsed > 0) {
+      // Calculate final WPM
+      const charactersTyped = finalTypedText.length;
+      const wordsTyped = charactersTyped / 5;
+      const finalWPM = Math.round(wordsTyped / timeElapsed);
+      
+      // Calculate final accuracy
+      let correctChars = 0;
+      for (let i = 0; i < finalTypedText.length; i++) {
+        if (finalTypedText[i] === generatedText[i]) {
+          correctChars++;
+        }
+      }
+      const finalAccuracy = Math.round((correctChars / finalTypedText.length) * 100);
+      
+      // Count final errors
+      let finalErrors = 0;
+      for (let i = 0; i < finalTypedText.length; i++) {
+        if (finalTypedText[i] !== generatedText[i]) {
+          finalErrors++;
+        }
+      }
+      
+      const newStats: TypingStats = {
+        wpm: Math.max(0, finalWPM),
+        accuracy: Math.max(0, Math.min(100, finalAccuracy)),
+        errors: finalErrors,
+        timestamp: Date.now()
+      };
 
-    setStatsHistory(prev => [...prev, newStats].slice(-20)); // Keep last 20 results
+      setStatsHistory(prev => [...prev, newStats].slice(-20)); // Keep last 20 results
+    }
+    
     setIsFinished(true);
-  }, [calculateCurrentStats, errors]);
+  }, [startTime, typedText, generatedText]);
 
   // Handle input change
   const handleInputChange = (value: string) => {
@@ -217,9 +305,18 @@ export default function TypingSpeed() {
     setErrors(errorCount);
     setCurrentIndex(value.length);
 
-    // Check if finished by reaching end of text
-    if (value.length >= generatedText.length) {
-      finishTest();
+    // Check if finished based on test type
+    if (settings.testType === 'wordCount') {
+      // For word count tests, finish when target word count is reached
+      const wordsTyped = value.trim().split(' ').filter(w => w.trim()).length;
+      if (wordsTyped >= settings.wordCount) {
+        finishTest();
+      }
+    } else {
+      // For duration tests, finish when reaching end of generated text (though this should rarely happen with 1000 words)
+      if (value.length >= generatedText.length) {
+        finishTest();
+      }
     }
   };
 
@@ -276,35 +373,52 @@ export default function TypingSpeed() {
                 </select>
               </div>
 
-              {/* Duration Selection */}
+              {/* Test Type Selection */}
               <div>
-                <label className="block text-sm font-medium mb-2">Duration (seconds)</label>
+                <label className="block text-sm font-medium mb-2">Test Type</label>
                 <select
-                  value={settings.duration}
-                  onChange={(e) => setSettings(prev => ({ ...prev, duration: parseInt(e.target.value) as any }))}
+                  value={settings.testType}
+                  onChange={(e) => setSettings(prev => ({ ...prev, testType: e.target.value as any }))}
                   className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
                 >
-                  <option value={15}>15s</option>
-                  <option value={30}>30s</option>
-                  <option value={60}>60s</option>
-                  <option value={120}>120s</option>
+                  <option value="duration">By Duration</option>
+                  <option value="wordCount">By Word Count</option>
                 </select>
               </div>
 
-              {/* Word Count */}
-              <div>
-                <label className="block text-sm font-medium mb-2">Word Count</label>
-                <select
-                  value={settings.wordCount}
-                  onChange={(e) => setSettings(prev => ({ ...prev, wordCount: parseInt(e.target.value) as any }))}
-                  className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-                >
-                  <option value={25}>25 words</option>
-                  <option value={50}>50 words</option>
-                  <option value={100}>100 words</option>
-                  <option value={200}>200 words</option>
-                </select>
-              </div>
+              {/* Duration Selection */}
+              {settings.testType === 'duration' && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">Duration (seconds)</label>
+                  <select
+                    value={settings.duration}
+                    onChange={(e) => setSettings(prev => ({ ...prev, duration: parseInt(e.target.value) as any }))}
+                    className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                  >
+                    <option value={15}>15s</option>
+                    <option value={30}>30s</option>
+                    <option value={60}>60s</option>
+                    <option value={120}>120s</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Word Count Selection */}
+              {settings.testType === 'wordCount' && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">Word Count</label>
+                  <select
+                    value={settings.wordCount}
+                    onChange={(e) => setSettings(prev => ({ ...prev, wordCount: parseInt(e.target.value) as any }))}
+                    className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                  >
+                    <option value={25}>25 words</option>
+                    <option value={50}>50 words</option>
+                    <option value={100}>100 words</option>
+                    <option value={200}>200 words</option>
+                  </select>
+                </div>
+              )}
 
               {/* Options */}
               <div className="space-y-2">
@@ -353,12 +467,25 @@ export default function TypingSpeed() {
           {/* Test Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="text-2xl font-bold text-blue-600">
-                {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
-              </div>
-              <div className="text-sm text-gray-500">
-                {settings.mode} • {settings.duration}s
-              </div>
+              {settings.testType === 'duration' ? (
+                <>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {settings.mode} • {settings.duration}s
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold text-green-600">
+                    {Math.round((typedText.split(' ').filter(w => w.trim()).length / settings.wordCount) * 100)}%
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {settings.mode} • {typedText.split(' ').filter(w => w.trim()).length}/{settings.wordCount} words
+                  </div>
+                </>
+              )}
             </div>
             <button
               onClick={resetTest}
@@ -432,19 +559,43 @@ export default function TypingSpeed() {
           {/* Real-time Performance Graph */}
           {realTimeStats.length > 1 && (
             <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
-              <h4 className="text-lg font-semibold mb-4">Live Performance</h4>
+              <h4 className="text-lg font-semibold mb-4 dark:text-white">Live Performance</h4>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={realTimeStats.map((stat, index) => ({ 
-                  time: index + 1, 
+                  second: stat.timestamp,
                   wpm: stat.wpm, 
                   accuracy: stat.accuracy 
                 }))}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="time" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="wpm" stroke="#3B82F6" strokeWidth={2} />
-                  <Line type="monotone" dataKey="accuracy" stroke="#10B981" strokeWidth={2} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+                  <XAxis 
+                    dataKey="second" 
+                    tick={{ fontSize: 12 }}
+                    label={{ value: 'Seconds', position: 'insideBottom', offset: -5 }}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12 }}
+                    label={{ value: 'WPM / Accuracy %', angle: -90, position: 'insideLeft' }}
+                  />
+                  <Tooltip 
+                    formatter={(value, name) => [value, name === 'wpm' ? 'WPM' : 'Accuracy %']}
+                    labelFormatter={(label) => `${label}s`}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="wpm" 
+                    stroke="#3B82F6" 
+                    strokeWidth={2} 
+                    dot={false}
+                    name="WPM"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="accuracy" 
+                    stroke="#10B981" 
+                    strokeWidth={2} 
+                    dot={false}
+                    name="Accuracy"
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -486,20 +637,74 @@ export default function TypingSpeed() {
           
           {/* History Graph */}
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
+            <h4 className="text-lg font-semibold mb-4 dark:text-white">Performance History</h4>
             <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={statsHistory.map((stat, index) => ({ 
+              <LineChart data={statsHistory.map((stat, index) => ({ 
                 test: index + 1, 
                 wpm: stat.wpm, 
-                accuracy: stat.accuracy 
+                accuracy: stat.accuracy,
+                errors: stat.errors
               }))}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="test" />
-                <YAxis />
-                <Tooltip />
-                <Area type="monotone" dataKey="wpm" stackId="1" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.3} />
-                <Area type="monotone" dataKey="accuracy" stackId="2" stroke="#10B981" fill="#10B981" fillOpacity={0.3} />
-              </AreaChart>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+                <XAxis 
+                  dataKey="test" 
+                  tick={{ fontSize: 12 }}
+                  label={{ value: 'Test Number', position: 'insideBottom', offset: -5 }}
+                />
+                <YAxis 
+                  tick={{ fontSize: 12 }}
+                  label={{ value: 'WPM / Accuracy %', angle: -90, position: 'insideLeft' }}
+                />
+                <Tooltip 
+                  formatter={(value, name) => {
+                    if (name === 'wpm') return [value, 'WPM'];
+                    if (name === 'accuracy') return [value, 'Accuracy %'];
+                    if (name === 'errors') return [value, 'Errors'];
+                    return [value, name];
+                  }}
+                  labelFormatter={(label) => `Test ${label}`}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="wpm" 
+                  stroke="#3B82F6" 
+                  strokeWidth={3} 
+                  dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
+                  name="wpm"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="accuracy" 
+                  stroke="#10B981" 
+                  strokeWidth={3} 
+                  dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
+                  name="accuracy"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="errors" 
+                  stroke="#EF4444" 
+                  strokeWidth={2} 
+                  dot={{ fill: '#EF4444', strokeWidth: 2, r: 3 }}
+                  strokeDasharray="5 5"
+                  name="errors"
+                />
+              </LineChart>
             </ResponsiveContainer>
+            <div className="flex justify-center space-x-6 mt-2 text-sm">
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-0.5 bg-blue-500"></div>
+                <span>WPM</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-0.5 bg-green-500"></div>
+                <span>Accuracy %</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-0.5 bg-red-500 border-dashed"></div>
+                <span>Errors</span>
+              </div>
+            </div>
           </div>
 
           {/* Recent Results */}
