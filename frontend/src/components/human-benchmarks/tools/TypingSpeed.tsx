@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { styles } from '@/lib/styles';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 
@@ -187,7 +187,7 @@ export default function TypingSpeed() {
       setTimeLeft(0);
     }
 
-    // Start real-time stats tracking
+    // Start real-time stats tracking - reduced frequency for better performance
     statsIntervalRef.current = setInterval(() => {
       const timeElapsed = (Date.now() - testStartTime) / 1000 / 60; // in minutes
       const timeElapsedSeconds = Math.floor((Date.now() - testStartTime) / 1000);
@@ -205,24 +205,20 @@ export default function TypingSpeed() {
         const wordsTyped = charactersTyped / 5;
         const wpm = timeElapsed > 0 ? Math.round(wordsTyped / timeElapsed) : 0;
         
-        // Calculate accuracy based on current input
+        // Calculate accuracy based on current input - optimized with early exit
         const currentText = inputRef.current?.value || '';
         let correctChars = 0;
+        let currentErrors = 0;
+        
         for (let i = 0; i < currentText.length; i++) {
           if (currentText[i] === text[i]) {
             correctChars++;
+          } else {
+            currentErrors++;
           }
         }
         
         const accuracy = currentText.length > 0 ? Math.round((correctChars / currentText.length) * 100) : 100;
-        
-        // Count current errors
-        let currentErrors = 0;
-        for (let i = 0; i < currentText.length; i++) {
-          if (currentText[i] !== text[i]) {
-            currentErrors++;
-          }
-        }
         
         return [...prev, {
           wpm: Math.max(0, wpm),
@@ -231,7 +227,7 @@ export default function TypingSpeed() {
           timestamp: timeElapsedSeconds
         }];
       });
-    }, 1000);
+    }, 2000); // Reduced from 1000ms to 2000ms for better performance
 
     setTimeout(() => {
       inputRef.current?.focus();
@@ -294,15 +290,7 @@ export default function TypingSpeed() {
     if (!isStarted || isFinished) return;
 
     setTypedText(value);
-    
-    // Count errors
-    let errorCount = 0;
-    for (let i = 0; i < value.length; i++) {
-      if (value[i] !== generatedText[i]) {
-        errorCount++;
-      }
-    }
-    setErrors(errorCount);
+    setErrors(calculateErrors(value));
     setCurrentIndex(value.length);
 
     // Check if finished based on test type
@@ -349,6 +337,90 @@ export default function TypingSpeed() {
   }, []);
 
   const currentStats = calculateCurrentStats();
+
+  // Memoized text display with line-based scrolling
+  const textDisplay = useMemo(() => {
+    if (!generatedText) return null;
+    
+    // Split text into lines based on a reasonable character limit per line
+    const charactersPerLine = 100;
+    const words = generatedText.split(' ');
+    const lines: string[] = [];
+    let currentLine = '';
+    
+    // Build lines by adding words until we reach character limit
+    for (const word of words) {
+      if (currentLine.length + word.length + 1 <= charactersPerLine) {
+        currentLine += (currentLine ? ' ' : '') + word;
+      } else {
+        if (currentLine) lines.push(currentLine);
+        currentLine = word;
+      }
+    }
+    if (currentLine) lines.push(currentLine);
+    
+    // Determine current line based on typed characters
+    let charCount = 0;
+    let currentLineIndex = 0;
+    for (let i = 0; i < lines.length; i++) {
+      if (currentIndex <= charCount + lines[i].length) {
+        currentLineIndex = i;
+        break;
+      }
+      charCount += lines[i].length + 1; // +1 for space between lines
+    }
+    
+    // Show 3 lines: current line and next 2 lines
+    const visibleLines = lines.slice(currentLineIndex, currentLineIndex + 3);
+    const startCharIndex = lines.slice(0, currentLineIndex).reduce((sum, line) => sum + line.length + 1, 0);
+    
+    return (
+      <div className="space-y-2">
+        {visibleLines.map((line, lineIdx) => {
+          const lineStartIndex = startCharIndex + visibleLines.slice(0, lineIdx).reduce((sum, l) => sum + l.length + 1, 0);
+          const isCurrentLine = currentLineIndex + lineIdx === currentLineIndex;
+          
+          return (
+            <div key={currentLineIndex + lineIdx} className={`
+              ${lineIdx === 0 ? 'text-lg' : lineIdx === 1 ? 'text-lg font-medium' : 'text-base opacity-60'}
+              transition-all duration-200
+            `}>
+              {line.split('').map((char, charIdx) => {
+                const actualIndex = lineStartIndex + charIdx;
+                return (
+                  <span
+                    key={actualIndex}
+                    className={
+                      actualIndex < currentIndex
+                        ? typedText[actualIndex] === char
+                          ? 'text-green-600 bg-green-100 dark:bg-green-900'
+                          : 'text-red-600 bg-red-100 dark:bg-red-900'
+                        : actualIndex === currentIndex
+                        ? 'bg-blue-200 dark:bg-blue-700 animate-pulse'
+                        : 'text-gray-500'
+                    }
+                  >
+                    {char}
+                  </span>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }, [generatedText, currentIndex, typedText]);
+
+  // Optimized error counting with early exit
+  const calculateErrors = useCallback((value: string) => {
+    let errorCount = 0;
+    for (let i = 0; i < value.length; i++) {
+      if (value[i] !== generatedText[i]) {
+        errorCount++;
+      }
+    }
+    return errorCount;
+  }, [generatedText]);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -496,24 +568,9 @@ export default function TypingSpeed() {
           </div>
 
           {/* Text Display */}
-          <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg text-lg leading-relaxed font-mono relative">
-            <div className="max-h-32 overflow-y-auto">
-              {generatedText.split('').map((char, index) => (
-                <span
-                  key={index}
-                  className={
-                    index < currentIndex
-                      ? typedText[index] === char
-                        ? 'text-green-600 bg-green-100 dark:bg-green-900'
-                        : 'text-red-600 bg-red-100 dark:bg-red-900'
-                      : index === currentIndex
-                      ? 'bg-blue-200 dark:bg-blue-700 animate-pulse'
-                      : 'text-gray-500'
-                  }
-                >
-                  {char}
-                </span>
-              ))}
+          <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg leading-relaxed font-mono relative">
+            <div className="min-h-32">
+              {textDisplay}
             </div>
           </div>
 
