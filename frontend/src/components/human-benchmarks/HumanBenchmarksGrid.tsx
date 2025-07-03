@@ -8,6 +8,7 @@ import TypingSpeed from './tools/TypingSpeed';
 import SequenceMemory from './tools/SequenceMemory';
 import VisualAcuity from './tools/VisualAcuity';
 import VerbalMemory from './tools/VerbalMemory';
+import AimTrainer from './tools/AimTrainer';
 
 interface BenchmarkTool {
   id: string;
@@ -21,6 +22,7 @@ interface BenchmarkTool {
 const benchmarkTools: BenchmarkTool[] = [
   // Reaction Tests
   { id: 'reaction-time', title: 'Reaction Time', description: 'Test how quickly you can react to visual stimuli', icon: '⚡', category: 'reaction', component: ReactionTime },
+  { id: 'aim-trainer', title: 'Aim Trainer', description: 'Test your mouse precision and targeting speed', icon: '🎯', category: 'reaction', component: AimTrainer },
   
   // Memory Tests
   { id: 'number-memory', title: 'Number Memory', description: 'How many digits can you remember in sequence?', icon: '🧠', category: 'memory', component: NumberMemory },
