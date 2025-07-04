@@ -5,17 +5,18 @@ import { styles } from '@/lib/styles';
 import ReactionTime from './tools/ReactionTime';
 import NumberMemory from './tools/NumberMemory';
 import TypingSpeed from './tools/TypingSpeed';
-import SequenceMemory from './tools/SequenceMemory';
+import SequenceMemory from './tools/VisualAcuity';
 import VisualAcuity from './tools/VisualAcuity';
 import VerbalMemory from './tools/VerbalMemory';
 import AimTrainer from './tools/AimTrainer';
+import SpellBee from './tools/SpellBee';
 
 interface BenchmarkTool {
   id: string;
   title: string;
   description: string;
   icon: string;
-  category: 'reaction' | 'memory' | 'typing' | 'visual';
+  category: 'reaction' | 'memory' | 'typing' | 'visual' | 'language';
   component: React.ComponentType;
 }
 
@@ -34,6 +35,9 @@ const benchmarkTools: BenchmarkTool[] = [
   
   // Visual Tests
   { id: 'visual-acuity', title: 'Visual Acuity', description: 'Test how well you can see small details and symbols', icon: '👁️', category: 'visual', component: VisualAcuity },
+  
+  // Language Tests
+  { id: 'spell-bee', title: 'Spell Bee', description: 'Listen to words and spell them correctly using text-to-speech', icon: '🐝', category: 'language', component: SpellBee },
 ];
 
 const categories = [
@@ -42,6 +46,7 @@ const categories = [
   { id: 'memory', name: 'Memory', count: benchmarkTools.filter(t => t.category === 'memory').length },
   { id: 'typing', name: 'Typing', count: benchmarkTools.filter(t => t.category === 'typing').length },
   { id: 'visual', name: 'Visual', count: benchmarkTools.filter(t => t.category === 'visual').length },
+  { id: 'language', name: 'Language', count: benchmarkTools.filter(t => t.category === 'language').length },
 ];
 
 export default function HumanBenchmarksGrid() {
