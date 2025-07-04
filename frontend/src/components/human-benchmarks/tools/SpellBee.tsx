@@ -31,15 +31,6 @@ interface SpellBeeSettings {
   hints: boolean;
 }
 
-interface WordDefinition {
-  word: string;
-  definition?: string;
-  difficulty: string;
-  syllables?: number;
-}
-
-type GameState = 'start' | 'playing' | 'finished';
-
 // Simple word lists organized by difficulty (backup only)
 const fallbackWordLists = {
   easy: [
@@ -154,6 +145,8 @@ class WordGenerator {
   }
 }
 
+type GameState = 'start' | 'playing' | 'finished';
+
 export default function SpellBee() {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
@@ -179,10 +172,6 @@ export default function SpellBee() {
   const [gameHistory, setGameHistory] = useState<GameHistory[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [gameStartTime, setGameStartTime] = useState<Date | null>(null);
-
-  // Enhanced TTS management
-  const [ttsQueue, setTtsQueue] = useState<string[]>([]);
-  const [isProcessingTTS, setIsProcessingTTS] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
@@ -236,10 +225,10 @@ export default function SpellBee() {
     const savedHistory = localStorage.getItem('spell-bee-history');
     if (savedHistory) {
       try {
-        const parsedHistory = JSON.parse(savedHistory).map((game: any) => ({
+        const parsedHistory = JSON.parse(savedHistory).map((game: GameHistory) => ({
           ...game,
           date: new Date(game.date),
-          results: game.results.map((result: any) => ({
+          results: game.results.map((result: SpellResult) => ({
             ...result,
             timestamp: new Date(result.timestamp)
           }))
@@ -263,13 +252,13 @@ export default function SpellBee() {
   }, [gameHistory]);
 
   // Get speech rate based on settings
-  const getSpeechRate = () => {
+  const getSpeechRate = useCallback(() => {
     switch (settings.speechSpeed) {
       case 'slow': return 0.7;
       case 'fast': return 1.3;
       default: return 1.0;
     }
-  };
+  }, [settings.speechSpeed]);
 
   // Enhanced speech clearing function
   const clearTTS = useCallback(() => {
@@ -285,13 +274,11 @@ export default function SpellBee() {
       }
       
       setIsPlaying(false);
-      setIsProcessingTTS(false);
-      setTtsQueue([]);
     }
   }, []);
 
   // Enhanced speak function with better flow control
-  const speakWord = useCallback((word: string, priority: boolean = false) => {
+  const speakWord = useCallback((word: string) => {
     if (!synthRef.current || !word) {
       console.warn('Speech synthesis not available or no word provided');
       return;
@@ -328,19 +315,16 @@ export default function SpellBee() {
         // Set up event handlers
         utterance.onstart = () => {
           setIsPlaying(true);
-          setIsProcessingTTS(true);
         };
 
         utterance.onend = () => {
           setIsPlaying(false);
-          setIsProcessingTTS(false);
           currentUtteranceRef.current = null;
         };
 
         utterance.onerror = (event) => {
           console.warn('Speech synthesis error:', event.error);
           setIsPlaying(false);
-          setIsProcessingTTS(false);
           currentUtteranceRef.current = null;
         };
 
@@ -361,7 +345,6 @@ export default function SpellBee() {
       } catch (error) {
         console.error('Error creating speech utterance:', error);
         setIsPlaying(false);
-        setIsProcessingTTS(false);
       }
     }, 50); // Small delay to ensure cleanup is complete
     
@@ -372,7 +355,7 @@ export default function SpellBee() {
     if (!synthRef.current || !word) return;
     
     // Use the enhanced speak function
-    speakWord(word, true);
+    speakWord(word);
   }, [speakWord]);
 
   // Initialize speech synthesis
@@ -399,40 +382,95 @@ export default function SpellBee() {
     return availableWords[Math.floor(Math.random() * availableWords.length)];
   }, [wordPool, usedWords, settings.difficulty]);
 
-  // Start the game
-  const startGame = async () => {
-    // Clear any existing TTS first
-    clearTTS();
-    
+  // New function to start the game
+  const startGame = useCallback(() => {
     setGameState('playing');
     setScore(0);
     setTotalWords(0);
     setResults([]);
-    setShowResult(null);
     setUsedWords(new Set());
+    setShowResult(null);
     setGameStartTime(new Date());
     
-    // Ensure we have words loaded
-    if (wordPool.length === 0) {
-      setIsLoadingWords(true);
-      const words = await WordGenerator.generateWords(settings.difficulty, 100);
-      setWordPool(words);
-      setIsLoadingWords(false);
-    }
-    
-    const newWord = generateNewWord();
-    setCurrentWord(newWord);
+    const firstWord = generateNewWord();
+    setCurrentWord(firstWord);
     setUserInput('');
     
-    // Speak the first word after a longer delay to ensure everything is ready
     setTimeout(() => {
-      speakWord(newWord);
-    }, 800);
+      speakWord(firstWord);
+    }, 500);
     
     setTimeout(() => {
       inputRef.current?.focus();
-    }, 1200);
-  };
+    }, 1000);
+  }, [generateNewWord, speakWord]);
+
+  // New function to reset the game
+  const resetGame = useCallback(() => {
+    clearTTS();
+    setGameState('start');
+    setScore(0);
+    setTotalWords(0);
+    setResults([]);
+    setUsedWords(new Set());
+    setCurrentWord('');
+    setUserInput('');
+    setShowResult(null);
+    setGameStartTime(null);
+    setShowHistory(false);
+  }, [clearTTS]);
+
+  // New function to finish game and save history
+  const finishGame = useCallback(() => {
+    const endTime = new Date();
+    const duration = gameStartTime ? Math.floor((endTime.getTime() - gameStartTime.getTime()) / 1000) : 0;
+    
+    const newGameHistory: GameHistory = {
+      id: `game-${Date.now()}`,
+      date: endTime,
+      difficulty: settings.difficulty,
+      totalWords: 20,
+      correctWords: score,
+      accuracy: Math.round((score / 20) * 100),
+      results: [...results],
+      duration
+    };
+
+    setGameHistory(prev => [newGameHistory, ...prev].slice(0, 50)); // Keep last 50 games
+    
+    if (score > bestScore) {
+      setBestScore(score);
+    }
+    
+    setGameState('finished');
+  }, [gameStartTime, settings.difficulty, score, results, bestScore]);
+
+  // Move to next word
+  const nextWord = useCallback(() => {
+    // Double-check if we should finish the game
+    if (totalWords >= 20) {
+      clearTTS();
+      finishGame();
+      return;
+    }
+
+    // Clear any ongoing speech
+    clearTTS();
+
+    const newWord = generateNewWord();
+    setCurrentWord(newWord);
+    setUserInput('');
+    setShowResult(null);
+    
+    // Longer delay to ensure proper sequencing
+    setTimeout(() => {
+      speakWord(newWord);
+    }, 500);
+    
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 900);
+  }, [totalWords, clearTTS, generateNewWord, speakWord, finishGame]);
 
   // Submit the spelling
   const submitSpelling = useCallback(() => {
@@ -474,74 +512,7 @@ export default function SpellBee() {
         nextWord();
       }, 2000);
     }
-  }, [userInput, currentWord, gameState, settings.autoAdvance, settings.difficulty, totalWords]);
-
-  // Move to next word
-  const nextWord = () => {
-    // Double-check if we should finish the game
-    if (totalWords >= 20) {
-      clearTTS();
-      finishGame();
-      return;
-    }
-
-    // Clear any ongoing speech
-    clearTTS();
-
-    const newWord = generateNewWord();
-    setCurrentWord(newWord);
-    setUserInput('');
-    setShowResult(null);
-    
-    // Longer delay to ensure proper sequencing
-    setTimeout(() => {
-      speakWord(newWord);
-    }, 500);
-    
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 900);
-  };
-
-  // New function to finish game and save history
-  const finishGame = () => {
-    const endTime = new Date();
-    const duration = gameStartTime ? Math.floor((endTime.getTime() - gameStartTime.getTime()) / 1000) : 0;
-    
-    const newGameHistory: GameHistory = {
-      id: `game-${Date.now()}`,
-      date: endTime,
-      difficulty: settings.difficulty,
-      totalWords: 20,
-      correctWords: score,
-      accuracy: Math.round((score / 20) * 100),
-      results: [...results],
-      duration
-    };
-
-    setGameHistory(prev => [newGameHistory, ...prev].slice(0, 50)); // Keep last 50 games
-    
-    if (score > bestScore) {
-      setBestScore(score);
-    }
-    
-    setGameState('finished');
-  };
-
-  // Enhanced reset game function
-  const resetGame = () => {
-    // Clear TTS first
-    clearTTS();
-    
-    setGameState('start');
-    setCurrentWord('');
-    setUserInput('');
-    setScore(0);
-    setTotalWords(0);
-    setResults([]);
-    setShowResult(null);
-    setUsedWords(new Set());
-  };
+  }, [userInput, currentWord, gameState, settings.autoAdvance, settings.difficulty, totalWords, clearTTS, finishGame, nextWord]);
 
   // Clear all history
   const clearHistory = () => {
@@ -782,7 +753,7 @@ export default function SpellBee() {
               </div>
               
               <div className="space-y-4 max-h-96 overflow-y-auto">
-                {gameHistory.map((game, index) => (
+                {gameHistory.map((game) => (
                   <div key={game.id} className={`p-4 rounded-lg border ${
                     isDark ? 'bg-gray-700/50 border-gray-600' : 'bg-gray-50 border-gray-200'
                   }`}>
@@ -1160,10 +1131,10 @@ export default function SpellBee() {
                   : isDark ? 'text-red-200' : 'text-red-800'
               }`}>
                 {accuracy >= 80 
-                  ? '🐝 Excellent spelling! You\'re a spelling bee champion!'
+                  ? '🐝 Excellent spelling! You&apos;re a spelling bee champion!'
                   : accuracy >= 60
                   ? '📚 Good work! Keep practicing to improve your spelling.'
-                  : '💪 Don\'t give up! Spelling takes practice - try an easier level.'}
+                  : '💪 Don&apos;t give up! Spelling takes practice - try an easier level.'}
               </p>
             </div>
           </div>
@@ -1189,7 +1160,7 @@ export default function SpellBee() {
             <div className="space-y-4">
               <h4 className={`text-lg font-semibold ${
                 isDark ? 'text-white' : 'text-gray-900'
-              }`}>This Game's Words</h4>
+              }`}>This Game&apos;s Words</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-64 overflow-y-auto">
                 {results.map((result, index) => (
                   <div key={index} className={`p-3 rounded-lg border ${

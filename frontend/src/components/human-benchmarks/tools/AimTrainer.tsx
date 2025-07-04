@@ -49,24 +49,24 @@ export default function AimTrainer() {
   const targetTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Get target size in pixels
-  const getTargetSize = () => {
+  const getTargetSize = useCallback(() => {
     switch (settings.targetSize) {
       case 'small': return 40;
       case 'medium': return 60;
       case 'large': return 80;
       default: return 60;
     }
-  };
+  }, [settings.targetSize]);
 
   // Get target spawn delay
-  const getTargetDelay = () => {
+  const getTargetDelay = useCallback(() => {
     switch (settings.targetSpeed) {
       case 'slow': return 2000;
       case 'medium': return 1500;
       case 'fast': return 1000;
       default: return 1500;
     }
-  };
+  }, [settings.targetSpeed]);
 
   // Generate random target position
   const generateTarget = useCallback(() => {
@@ -91,33 +91,31 @@ export default function AimTrainer() {
     setTargetId(prev => prev + 1);
 
     // Auto-remove target after a timeout (miss)
+    const timeoutDelay = getTargetDelay() * 2;
     targetTimeoutRef.current = setTimeout(() => {
-      if (currentTarget?.id === newTarget.id) {
-        const missedShot: Shot = {
-          id: newTarget.id,
-          hit: false,
-          reactionTime: 0,
-          accuracy: 0,
-          timestamp: Date.now()
-        };
-        setShots(prev => [...prev, missedShot]);
-        setCurrentTarget(null);
-        scheduleNextTarget();
-      }
-    }, getTargetDelay() * 2); // Target disappears after 2x spawn delay
-  }, [targetId, currentTarget, settings]);
-
-  // Schedule next target
-  const scheduleNextTarget = useCallback(() => {
-    if (gameState !== 'playing') return;
-
-    const delay = getTargetDelay();
-    setTimeout(() => {
-      if (gameState === 'playing') {
-        generateTarget();
-      }
-    }, delay);
-  }, [gameState, generateTarget, settings]);
+      setCurrentTarget(current => {
+        if (current?.id === newTarget.id) {
+          const missedShot: Shot = {
+            id: newTarget.id,
+            hit: false,
+            reactionTime: 0,
+            accuracy: 0,
+            timestamp: Date.now()
+          };
+          setShots(prev => [...prev, missedShot]);
+          // Schedule next target inline to avoid circular dependency
+          const nextDelay = getTargetDelay();
+          setTimeout(() => {
+            if (gameState === 'playing') {
+              generateTarget();
+            }
+          }, nextDelay);
+          return null;
+        }
+        return current;
+      });
+    }, timeoutDelay);
+  }, [targetId, getTargetSize, getTargetDelay, gameState]);
 
   // Handle target click
   const handleTargetClick = (event: React.MouseEvent, target: Target) => {
@@ -152,7 +150,13 @@ export default function AimTrainer() {
       clearTimeout(targetTimeoutRef.current);
     }
 
-    scheduleNextTarget();
+    // Schedule next target
+    const delay = getTargetDelay();
+    setTimeout(() => {
+      if (gameState === 'playing') {
+        generateTarget();
+      }
+    }, delay);
   };
 
   // Handle miss click (clicking on background)

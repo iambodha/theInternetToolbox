@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { styles } from '@/lib/styles';
 import { useTheme } from '@/contexts/ThemeContext';
 
 type GameState = 'waiting' | 'ready' | 'go' | 'clicked' | 'tooEarly';

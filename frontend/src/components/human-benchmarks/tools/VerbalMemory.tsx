@@ -28,7 +28,6 @@ export default function VerbalMemory() {
   const [lives, setLives] = useState(3);
   const [level, setLevel] = useState(1);
   const [currentWord, setCurrentWord] = useState('');
-  const [wordPool, setWordPool] = useState<string[]>([]);
   const [seenWords, setSeenWords] = useState<Set<string>>(new Set());
   const [allShownWords, setAllShownWords] = useState<string[]>([]);
   const [results, setResults] = useState<WordResult[]>([]);
@@ -63,7 +62,6 @@ export default function VerbalMemory() {
     const selectedList = wordLists[Math.min(level - 1, wordLists.length - 1)];
     const shuffled = [...selectedList].sort(() => Math.random() - 0.5);
     
-    setWordPool(shuffled);
     setSeenWords(new Set());
     setAllShownWords([]);
     setScore(0);
@@ -142,7 +140,6 @@ export default function VerbalMemory() {
     setLives(3);
     setLevel(1);
     setCurrentWord('');
-    setWordPool([]);
     setSeenWords(new Set());
     setAllShownWords([]);
     setResults([]);
@@ -168,7 +165,7 @@ export default function VerbalMemory() {
             <h3 className={`text-lg font-semibold mb-2 ${
               isDark ? 'text-white' : 'text-gray-900'
             }`}>How it works:</h3>
-            <p className={`${
+            <p className={`$${
               isDark ? 'text-gray-300' : 'text-gray-600'
             }`}>
               You&apos;ll see a series of words. Click &quot;SEEN&quot; if you&apos;ve seen the word before in this test, 
@@ -447,12 +444,12 @@ export default function VerbalMemory() {
             <h4 className={`font-medium mb-2 ${
               isDark ? 'text-blue-200' : 'text-blue-900'
             }`}>How to Play</h4>
-            <ul className={`text-sm space-y-1 ${
+            <ul className={`text-sm space-y-1 $${
               isDark ? 'text-blue-300' : 'text-blue-700'
             }`}>
               <li>• A word will appear on screen</li>
-              <li>• Click "NEW" if you haven't seen it before in this test</li>
-              <li>• Click "SEEN" if you have seen it before in this test</li>
+              <li>• Click &quot;NEW&quot; if you haven&apos;t seen it before in this test</li>
+              <li>• Click &quot;SEEN&quot; if you have seen it before in this test</li>
               <li>• You lose a life for each wrong answer</li>
               <li>• The game ends when you run out of lives</li>
               <li>• Level up every 20 correct answers for harder words</li>
