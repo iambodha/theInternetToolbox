@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { styles } from '@/lib/styles';
+import { useTheme } from '@/contexts/ThemeContext';
 
 type GameState = 'waiting' | 'ready' | 'go' | 'clicked' | 'tooEarly';
 
@@ -10,6 +12,9 @@ interface ReactionResult {
 }
 
 export default function ReactionTime() {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+  
   const [gameState, setGameState] = useState<GameState>('waiting');
   const [reactionTime, setReactionTime] = useState<number | null>(null);
   const [results, setResults] = useState<ReactionResult[]>([]);
@@ -127,12 +132,12 @@ export default function ReactionTime() {
   };
 
   const getPerformanceRating = (time: number): { rating: string; color: string } => {
-    if (time < 200) return { rating: 'Exceptional', color: 'text-purple-600' };
-    if (time < 250) return { rating: 'Excellent', color: 'text-green-600' };
-    if (time < 300) return { rating: 'Good', color: 'text-blue-600' };
-    if (time < 350) return { rating: 'Average', color: 'text-yellow-600' };
-    if (time < 400) return { rating: 'Below Average', color: 'text-orange-600' };
-    return { rating: 'Slow', color: 'text-red-600' };
+    if (time < 200) return { rating: 'Exceptional', color: isDark ? 'text-purple-400' : 'text-purple-600' };
+    if (time < 250) return { rating: 'Excellent', color: isDark ? 'text-green-400' : 'text-green-600' };
+    if (time < 300) return { rating: 'Good', color: isDark ? 'text-blue-400' : 'text-blue-600' };
+    if (time < 350) return { rating: 'Average', color: isDark ? 'text-yellow-400' : 'text-yellow-600' };
+    if (time < 400) return { rating: 'Below Average', color: isDark ? 'text-orange-400' : 'text-orange-600' };
+    return { rating: 'Slow', color: isDark ? 'text-red-400' : 'text-red-600' };
   };
 
   return (
@@ -217,25 +222,43 @@ export default function ReactionTime() {
       {/* Statistics */}
       {results.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-foreground/5 rounded-lg p-6 text-center">
-            <div className="text-3xl font-bold text-green-600 mb-2">
+          <div className={`rounded-lg p-6 text-center ${
+            isDark ? 'bg-gray-800' : 'bg-gray-50'
+          }`}>
+            <div className={`text-3xl font-bold mb-2 ${
+              isDark ? 'text-green-400' : 'text-green-600'
+            }`}>
               {bestTime} ms
             </div>
-            <div className="text-sm text-foreground/60">Best Time</div>
+            <div className={`text-sm ${
+              isDark ? 'text-gray-400' : 'text-gray-600'
+            }`}>Best Time</div>
           </div>
           
-          <div className="bg-foreground/5 rounded-lg p-6 text-center">
-            <div className="text-3xl font-bold text-blue-600 mb-2">
+          <div className={`rounded-lg p-6 text-center ${
+            isDark ? 'bg-gray-800' : 'bg-gray-50'
+          }`}>
+            <div className={`text-3xl font-bold mb-2 ${
+              isDark ? 'text-blue-400' : 'text-blue-600'
+            }`}>
               {averageTime} ms
             </div>
-            <div className="text-sm text-foreground/60">Average Time</div>
+            <div className={`text-sm ${
+              isDark ? 'text-gray-400' : 'text-gray-600'
+            }`}>Average Time</div>
           </div>
           
-          <div className="bg-foreground/5 rounded-lg p-6 text-center">
-            <div className="text-3xl font-bold text-purple-600 mb-2">
+          <div className={`rounded-lg p-6 text-center ${
+            isDark ? 'bg-gray-800' : 'bg-gray-50'
+          }`}>
+            <div className={`text-3xl font-bold mb-2 ${
+              isDark ? 'text-purple-400' : 'text-purple-600'
+            }`}>
               {results.length}
             </div>
-            <div className="text-sm text-foreground/60">Attempts</div>
+            <div className={`text-sm ${
+              isDark ? 'text-gray-400' : 'text-gray-600'
+            }`}>Attempts</div>
           </div>
         </div>
       )}
@@ -244,10 +267,16 @@ export default function ReactionTime() {
       {results.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Recent Results</h3>
+            <h3 className={`text-lg font-semibold ${
+              isDark ? 'text-white' : 'text-gray-900'
+            }`}>Recent Results</h3>
             <button
               onClick={clearResults}
-              className="px-4 py-2 text-sm bg-foreground/10 hover:bg-foreground/20 rounded-lg transition-colors"
+              className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+                isDark 
+                  ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                  : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+              }`}
             >
               Clear Results
             </button>
@@ -255,14 +284,20 @@ export default function ReactionTime() {
           
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {results.slice(-10).reverse().map((result, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-foreground/5 rounded-lg">
+              <div key={index} className={`flex items-center justify-between p-3 rounded-lg ${
+                isDark ? 'bg-gray-800' : 'bg-gray-50'
+              }`}>
                 <div className="flex items-center space-x-4">
-                  <span className="text-lg font-bold">{result.time} ms</span>
+                  <span className={`text-lg font-bold ${
+                    isDark ? 'text-white' : 'text-gray-900'
+                  }`}>{result.time} ms</span>
                   <span className={`text-sm ${getPerformanceRating(result.time).color}`}>
                     {getPerformanceRating(result.time).rating}
                   </span>
                 </div>
-                <span className="text-sm text-foreground/60">
+                <span className={`text-sm ${
+                  isDark ? 'text-gray-400' : 'text-gray-600'
+                }`}>
                   {result.timestamp.toLocaleTimeString()}
                 </span>
               </div>
@@ -272,12 +307,22 @@ export default function ReactionTime() {
       )}
 
       {/* Instructions */}
-      <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+      <div className={`border rounded-lg p-6 ${
+        isDark 
+          ? 'bg-blue-950/20 border-blue-800' 
+          : 'bg-blue-50 border-blue-200'
+      }`}>
         <div className="flex items-start space-x-3">
-          <div className="text-blue-600 dark:text-blue-400 text-xl">ℹ️</div>
+          <div className={`text-xl ${
+            isDark ? 'text-blue-400' : 'text-blue-600'
+          }`}>ℹ️</div>
           <div>
-            <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">How to Play</h4>
-            <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
+            <h4 className={`font-medium mb-2 ${
+              isDark ? 'text-blue-200' : 'text-blue-900'
+            }`}>How to Play</h4>
+            <ul className={`text-sm space-y-1 ${
+              isDark ? 'text-blue-300' : 'text-blue-700'
+            }`}>
               <li>• Click the red area to start the test</li>
               <li>• Wait for the screen to turn green</li>
               <li>• Click as quickly as possible when you see green</li>
@@ -290,35 +335,41 @@ export default function ReactionTime() {
       </div>
 
       {/* Performance Guide */}
-      <div className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800 rounded-lg p-6">
-        <h4 className="font-medium mb-4">Reaction Time Guide</h4>
+      <div className={`border rounded-lg p-6 ${
+        isDark 
+          ? 'bg-gray-800 border-gray-700' 
+          : 'bg-gray-50 border-gray-200'
+      }`}>
+        <h4 className={`font-medium mb-4 ${
+          isDark ? 'text-white' : 'text-gray-900'
+        }`}>Reaction Time Guide</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="space-y-2">
             <div className="flex justify-between">
-              <span className="text-purple-600">Exceptional:</span>
-              <span>&lt; 200ms</span>
+              <span className={isDark ? 'text-purple-400' : 'text-purple-600'}>Exceptional:</span>
+              <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>&lt; 200ms</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-green-600">Excellent:</span>
-              <span>200-250ms</span>
+              <span className={isDark ? 'text-green-400' : 'text-green-600'}>Excellent:</span>
+              <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>200-250ms</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-blue-600">Good:</span>
-              <span>250-300ms</span>
+              <span className={isDark ? 'text-blue-400' : 'text-blue-600'}>Good:</span>
+              <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>250-300ms</span>
             </div>
           </div>
           <div className="space-y-2">
             <div className="flex justify-between">
-              <span className="text-yellow-600">Average:</span>
-              <span>300-350ms</span>
+              <span className={isDark ? 'text-yellow-400' : 'text-yellow-600'}>Average:</span>
+              <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>300-350ms</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-orange-600">Below Average:</span>
-              <span>350-400ms</span>
+              <span className={isDark ? 'text-orange-400' : 'text-orange-600'}>Below Average:</span>
+              <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>350-400ms</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-red-600">Slow:</span>
-              <span>&gt; 400ms</span>
+              <span className={isDark ? 'text-red-400' : 'text-red-600'}>Slow:</span>
+              <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>&gt; 400ms</span>
             </div>
           </div>
         </div>

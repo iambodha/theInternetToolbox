@@ -2,8 +2,12 @@
 
 import { useState } from 'react';
 import { styles } from '@/lib/styles';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function SequenceMemory() {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+
   const [sequence, setSequence] = useState<number[]>([]);
   const [userSequence, setUserSequence] = useState<number[]>([]);
   const [isShowing, setIsShowing] = useState(false);
@@ -77,9 +81,15 @@ export default function SequenceMemory() {
     <div className="max-w-2xl mx-auto space-y-6">
       {gameState === 'start' && (
         <div className="text-center space-y-6">
-          <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg">
-            <h3 className="text-lg font-semibold mb-2">How it works:</h3>
-            <p className="text-gray-600 dark:text-gray-300">
+          <div className={`p-6 rounded-lg border ${
+            isDark ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
+          }`}>
+            <h3 className={`text-lg font-semibold mb-2 ${
+              isDark ? 'text-white' : 'text-gray-900'
+            }`}>How it works:</h3>
+            <p className={`${
+              isDark ? 'text-gray-300' : 'text-gray-600'
+            }`}>
               Watch the sequence of squares that light up, then click them in the same order. 
               The sequence gets longer with each level.
             </p>
@@ -97,35 +107,53 @@ export default function SequenceMemory() {
         <>
           {/* Stats */}
           <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            <div className={`p-4 rounded-lg text-center border ${
+              isDark 
+                ? 'bg-blue-900/20 border-blue-800 text-blue-400' 
+                : 'bg-blue-50 border-blue-200 text-blue-600'
+            }`}>
+              <div className="text-2xl font-bold">
                 {level}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-300">Level</div>
+              <div className={`text-sm ${
+                isDark ? 'text-blue-300' : 'text-blue-700'
+              }`}>Level</div>
             </div>
-            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+            <div className={`p-4 rounded-lg text-center border ${
+              isDark 
+                ? 'bg-green-900/20 border-green-800 text-green-400' 
+                : 'bg-green-50 border-green-200 text-green-600'
+            }`}>
+              <div className="text-2xl font-bold">
                 {score}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-300">Score</div>
+              <div className={`text-sm ${
+                isDark ? 'text-green-300' : 'text-green-700'
+              }`}>Score</div>
             </div>
           </div>
 
           {/* Game status */}
           <div className="text-center mb-6">
             {gameState === 'showing' && (
-              <p className="text-lg text-blue-600 dark:text-blue-400">
+              <p className={`text-lg ${
+                isDark ? 'text-blue-400' : 'text-blue-600'
+              }`}>
                 Watch the sequence...
               </p>
             )}
             {gameState === 'input' && (
-              <p className="text-lg text-green-600 dark:text-green-400">
+              <p className={`text-lg ${
+                isDark ? 'text-green-400' : 'text-green-600'
+              }`}>
                 Click the squares in the same order ({userSequence.length}/{sequence.length})
               </p>
             )}
             {gameState === 'correct' && (
               <div className="space-y-4">
-                <p className="text-lg text-green-600 dark:text-green-400">
+                <p className={`text-lg ${
+                  isDark ? 'text-green-400' : 'text-green-600'
+                }`}>
                   Correct! Moving to level {level}
                 </p>
                 <button
@@ -138,7 +166,9 @@ export default function SequenceMemory() {
             )}
             {gameState === 'wrong' && (
               <div className="space-y-4">
-                <p className="text-lg text-red-600 dark:text-red-400">
+                <p className={`text-lg ${
+                  isDark ? 'text-red-400' : 'text-red-600'
+                }`}>
                   Wrong sequence! You reached level {level}
                 </p>
                 <button
@@ -168,11 +198,15 @@ export default function SequenceMemory() {
                   w-20 h-20 rounded-lg border-2 transition-all duration-200
                   ${highlightedSquare === index 
                     ? 'bg-blue-500 border-blue-600 scale-105' 
-                    : 'bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600'
+                    : isDark 
+                      ? 'bg-gray-700 border-gray-600 hover:bg-gray-600' 
+                      : 'bg-gray-200 border-gray-300 hover:bg-gray-300'
                   }
                   ${gameState === 'input' ? 'cursor-pointer' : 'cursor-default'}
                   ${userSequence.includes(index) && gameState === 'input' 
-                    ? 'bg-green-200 dark:bg-green-800 border-green-400' 
+                    ? isDark 
+                      ? 'bg-green-800 border-green-400' 
+                      : 'bg-green-200 border-green-400'
                     : ''
                   }
                 `}

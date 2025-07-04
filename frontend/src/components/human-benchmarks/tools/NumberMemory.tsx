@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { styles } from '@/lib/styles';
+import { useTheme } from '@/contexts/ThemeContext';
 
 type GameState = 'start' | 'memorize' | 'input' | 'correct' | 'incorrect' | 'gameOver';
 
@@ -13,6 +15,9 @@ interface MemoryResult {
 }
 
 export default function NumberMemory() {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+  
   const [gameState, setGameState] = useState<GameState>('start');
   const [currentLevel, setCurrentLevel] = useState(1);
   const [sequence, setSequence] = useState('');
@@ -143,14 +148,14 @@ export default function NumberMemory() {
   }, [gameState]);
 
   const getPerformanceRating = (level: number): { rating: string; color: string } => {
-    if (level >= 15) return { rating: 'Superhuman', color: 'text-purple-600' };
-    if (level >= 12) return { rating: 'Exceptional', color: 'text-indigo-600' };
-    if (level >= 10) return { rating: 'Excellent', color: 'text-green-600' };
-    if (level >= 8) return { rating: 'Very Good', color: 'text-blue-600' };
-    if (level >= 6) return { rating: 'Good', color: 'text-teal-600' };
-    if (level >= 4) return { rating: 'Average', color: 'text-yellow-600' };
-    if (level >= 2) return { rating: 'Below Average', color: 'text-orange-600' };
-    return { rating: 'Poor', color: 'text-red-600' };
+    if (level >= 15) return { rating: 'Superhuman', color: isDark ? 'text-purple-400' : 'text-purple-600' };
+    if (level >= 12) return { rating: 'Exceptional', color: isDark ? 'text-indigo-400' : 'text-indigo-600' };
+    if (level >= 10) return { rating: 'Excellent', color: isDark ? 'text-green-400' : 'text-green-600' };
+    if (level >= 8) return { rating: 'Very Good', color: isDark ? 'text-blue-400' : 'text-blue-600' };
+    if (level >= 6) return { rating: 'Good', color: isDark ? 'text-teal-400' : 'text-teal-600' };
+    if (level >= 4) return { rating: 'Average', color: isDark ? 'text-yellow-400' : 'text-yellow-600' };
+    if (level >= 2) return { rating: 'Below Average', color: isDark ? 'text-orange-400' : 'text-orange-600' };
+    return { rating: 'Poor', color: isDark ? 'text-red-400' : 'text-red-600' };
   };
 
   const getPercentile = (level: number): number => {
@@ -171,15 +176,23 @@ export default function NumberMemory() {
       <div className="flex justify-center">
         <div className="w-full max-w-2xl">
           {gameState === 'start' && (
-            <div className="text-center bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-12">
+            <div className={`text-center border rounded-lg p-12 ${
+              isDark 
+                ? 'bg-blue-950/20 border-blue-800' 
+                : 'bg-blue-50 border-blue-200'
+            }`}>
               <div className="text-6xl mb-6">🧠</div>
-              <h2 className="text-3xl font-bold mb-4">Number Memory Test</h2>
-              <p className="text-lg text-foreground/70 mb-6">
+              <h2 className={`text-3xl font-bold mb-4 ${
+                isDark ? 'text-white' : 'text-gray-900'
+              }`}>Number Memory Test</h2>
+              <p className={`text-lg mb-6 ${
+                isDark ? 'text-gray-300' : 'text-gray-600'
+              }`}>
                 Memorize the number sequence and type it back. Each level adds one more digit.
               </p>
               <button
                 onClick={startGame}
-                className="px-8 py-4 bg-blue-600 text-white rounded-lg font-semibold text-lg hover:bg-blue-700 transition-colors"
+                className={`${styles.button.primary} px-8 py-4 text-lg`}
               >
                 Start Test
               </button>
@@ -187,27 +200,49 @@ export default function NumberMemory() {
           )}
 
           {gameState === 'memorize' && (
-            <div className="text-center bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-12">
-              <div className="text-sm text-foreground/60 mb-2">Level {currentLevel}</div>
-              <div className="text-6xl font-mono font-bold mb-6 tracking-wider">
+            <div className={`text-center border rounded-lg p-12 ${
+              isDark 
+                ? 'bg-yellow-950/20 border-yellow-800' 
+                : 'bg-yellow-50 border-yellow-200'
+            }`}>
+              <div className={`text-sm mb-2 ${
+                isDark ? 'text-gray-400' : 'text-gray-600'
+              }`}>Level {currentLevel}</div>
+              <div className={`text-6xl font-mono font-bold mb-6 tracking-wider ${
+                isDark ? 'text-white' : 'text-gray-900'
+              }`}>
                 {showingNumber ? sequence : ''}
               </div>
-              <div className="text-lg mb-4">
+              <div className={`text-lg mb-4 ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>
                 Memorize this {currentLevel}-digit number
               </div>
-              <div className="text-2xl font-bold text-yellow-600">
+              <div className={`text-2xl font-bold ${
+                isDark ? 'text-yellow-400' : 'text-yellow-600'
+              }`}>
                 {timeLeft}
               </div>
-              <div className="text-sm text-foreground/60">
+              <div className={`text-sm ${
+                isDark ? 'text-gray-400' : 'text-gray-600'
+              }`}>
                 seconds remaining
               </div>
             </div>
           )}
 
           {gameState === 'input' && (
-            <div className="text-center bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-12">
-              <div className="text-sm text-foreground/60 mb-2">Level {currentLevel}</div>
-              <div className="text-2xl font-bold mb-6">
+            <div className={`text-center border rounded-lg p-12 ${
+              isDark 
+                ? 'bg-green-950/20 border-green-800' 
+                : 'bg-green-50 border-green-200'
+            }`}>
+              <div className={`text-sm mb-2 ${
+                isDark ? 'text-gray-400' : 'text-gray-600'
+              }`}>Level {currentLevel}</div>
+              <div className={`text-2xl font-bold mb-6 ${
+                isDark ? 'text-white' : 'text-gray-900'
+              }`}>
                 Type the {currentLevel}-digit number
               </div>
               <input
@@ -217,14 +252,18 @@ export default function NumberMemory() {
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 placeholder="Enter the number..."
-                className="w-full max-w-md px-4 py-3 text-2xl font-mono text-center border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-800"
+                className={`w-full max-w-md px-4 py-3 text-2xl font-mono text-center border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                  isDark 
+                    ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                }`}
                 maxLength={currentLevel}
               />
               <div className="mt-6">
                 <button
                   onClick={submitAnswer}
                   disabled={userInput.length !== currentLevel}
-                  className="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className={`${styles.button.primary} px-6 py-3 disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   Submit
                 </button>
@@ -233,54 +272,88 @@ export default function NumberMemory() {
           )}
 
           {gameState === 'correct' && (
-            <div className="text-center bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-12">
+            <div className={`text-center border rounded-lg p-12 ${
+              isDark 
+                ? 'bg-green-950/20 border-green-800' 
+                : 'bg-green-50 border-green-200'
+            }`}>
               <div className="text-6xl mb-4">✅</div>
-              <h2 className="text-3xl font-bold text-green-600 mb-2">Correct!</h2>
-              <p className="text-lg mb-4">
+              <h2 className={`text-3xl font-bold mb-2 ${
+                isDark ? 'text-green-400' : 'text-green-600'
+              }`}>Correct!</h2>
+              <p className={`text-lg mb-4 ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>
                 You remembered all {currentLevel} digits
               </p>
-              <div className="text-2xl font-mono font-bold">
+              <div className={`text-2xl font-mono font-bold ${
+                isDark ? 'text-white' : 'text-gray-900'
+              }`}>
                 {sequence}
               </div>
-              <p className="text-sm text-foreground/60 mt-4">
+              <p className={`text-sm mt-4 ${
+                isDark ? 'text-gray-400' : 'text-gray-600'
+              }`}>
                 Advancing to level {currentLevel + 1}...
               </p>
             </div>
           )}
 
           {gameState === 'incorrect' && (
-            <div className="text-center bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-12">
+            <div className={`text-center border rounded-lg p-12 ${
+              isDark 
+                ? 'bg-red-950/20 border-red-800' 
+                : 'bg-red-50 border-red-200'
+            }`}>
               <div className="text-6xl mb-4">❌</div>
-              <h2 className="text-3xl font-bold text-red-600 mb-4">Incorrect</h2>
-              <div className="space-y-2 text-lg">
+              <h2 className={`text-3xl font-bold mb-4 ${
+                isDark ? 'text-red-400' : 'text-red-600'
+              }`}>Incorrect</h2>
+              <div className={`space-y-2 text-lg ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>
                 <div>
-                  <span className="text-foreground/60">Correct: </span>
-                  <span className="font-mono font-bold">{sequence}</span>
+                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Correct: </span>
+                  <span className={`font-mono font-bold ${
+                    isDark ? 'text-white' : 'text-gray-900'
+                  }`}>{sequence}</span>
                 </div>
                 <div>
-                  <span className="text-foreground/60">You entered: </span>
-                  <span className="font-mono font-bold">{userInput}</span>
+                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>You entered: </span>
+                  <span className={`font-mono font-bold ${
+                    isDark ? 'text-white' : 'text-gray-900'
+                  }`}>{userInput}</span>
                 </div>
               </div>
             </div>
           )}
 
           {gameState === 'gameOver' && (
-            <div className="text-center bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-lg p-12">
+            <div className={`text-center border rounded-lg p-12 ${
+              isDark 
+                ? 'bg-purple-950/20 border-purple-800' 
+                : 'bg-purple-50 border-purple-200'
+            }`}>
               <div className="text-6xl mb-4">🎯</div>
-              <h2 className="text-3xl font-bold mb-4">Game Over</h2>
-              <div className="text-4xl font-bold text-purple-600 mb-2">
+              <h2 className={`text-3xl font-bold mb-4 ${
+                isDark ? 'text-white' : 'text-gray-900'
+              }`}>Game Over</h2>
+              <div className={`text-4xl font-bold mb-2 ${
+                isDark ? 'text-purple-400' : 'text-purple-600'
+              }`}>
                 Level {currentLevel - 1}
               </div>
               <div className={`text-xl mb-2 ${getPerformanceRating(currentLevel - 1).color}`}>
                 {getPerformanceRating(currentLevel - 1).rating}
               </div>
-              <p className="text-lg mb-6">
+              <p className={`text-lg mb-6 ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>
                 Better than {getPercentile(currentLevel - 1)}% of people
               </p>
               <button
                 onClick={startGame}
-                className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+                className={`${styles.button.primary} px-6 py-3`}
               >
                 Try Again
               </button>
@@ -292,25 +365,43 @@ export default function NumberMemory() {
       {/* Statistics */}
       {bestLevel > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-foreground/5 rounded-lg p-6 text-center">
-            <div className="text-3xl font-bold text-purple-600 mb-2">
+          <div className={`rounded-lg p-6 text-center ${
+            isDark ? 'bg-gray-800' : 'bg-gray-50'
+          }`}>
+            <div className={`text-3xl font-bold mb-2 ${
+              isDark ? 'text-purple-400' : 'text-purple-600'
+            }`}>
               {bestLevel}
             </div>
-            <div className="text-sm text-foreground/60">Best Level</div>
+            <div className={`text-sm ${
+              isDark ? 'text-gray-400' : 'text-gray-600'
+            }`}>Best Level</div>
           </div>
           
-          <div className="bg-foreground/5 rounded-lg p-6 text-center">
-            <div className="text-3xl font-bold text-blue-600 mb-2">
+          <div className={`rounded-lg p-6 text-center ${
+            isDark ? 'bg-gray-800' : 'bg-gray-50'
+          }`}>
+            <div className={`text-3xl font-bold mb-2 ${
+              isDark ? 'text-blue-400' : 'text-blue-600'
+            }`}>
               {bestLevel}
             </div>
-            <div className="text-sm text-foreground/60">Max Digits</div>
+            <div className={`text-sm ${
+              isDark ? 'text-gray-400' : 'text-gray-600'
+            }`}>Max Digits</div>
           </div>
           
-          <div className="bg-foreground/5 rounded-lg p-6 text-center">
-            <div className="text-3xl font-bold text-green-600 mb-2">
+          <div className={`rounded-lg p-6 text-center ${
+            isDark ? 'bg-gray-800' : 'bg-gray-50'
+          }`}>
+            <div className={`text-3xl font-bold mb-2 ${
+              isDark ? 'text-green-400' : 'text-green-600'
+            }`}>
               {results.filter(r => r.correct).length}
             </div>
-            <div className="text-sm text-foreground/60">Levels Passed</div>
+            <div className={`text-sm ${
+              isDark ? 'text-gray-400' : 'text-gray-600'
+            }`}>Levels Passed</div>
           </div>
         </div>
       )}
@@ -318,27 +409,47 @@ export default function NumberMemory() {
       {/* Recent Results */}
       {results.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Recent Attempts</h3>
+          <h3 className={`text-lg font-semibold ${
+            isDark ? 'text-white' : 'text-gray-900'
+          }`}>Recent Attempts</h3>
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {results.slice(-10).reverse().map((result, index) => (
               <div key={index} className={`flex items-center justify-between p-3 rounded-lg ${
-                result.correct ? 'bg-green-50 dark:bg-green-950/20' : 'bg-red-50 dark:bg-red-950/20'
+                result.correct 
+                  ? isDark 
+                    ? 'bg-green-950/20 border border-green-800' 
+                    : 'bg-green-50 border border-green-200'
+                  : isDark 
+                    ? 'bg-red-950/20 border border-red-800' 
+                    : 'bg-red-50 border border-red-200'
               }`}>
                 <div className="flex items-center space-x-4">
-                  <span className="text-lg font-bold">Level {result.level}</span>
-                  <span className={`text-sm ${result.correct ? 'text-green-600' : 'text-red-600'}`}>
+                  <span className={`text-lg font-bold ${
+                    isDark ? 'text-white' : 'text-gray-900'
+                  }`}>Level {result.level}</span>
+                  <span className={`text-sm ${
+                    result.correct 
+                      ? isDark ? 'text-green-400' : 'text-green-600'
+                      : isDark ? 'text-red-400' : 'text-red-600'
+                  }`}>
                     {result.correct ? '✅ Passed' : '❌ Failed'}
                   </span>
-                  <span className="font-mono text-sm">
+                  <span className={`font-mono text-sm ${
+                    isDark ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
                     {result.sequence}
                   </span>
                   {!result.correct && (
-                    <span className="font-mono text-sm text-foreground/60">
+                    <span className={`font-mono text-sm ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
                       → {result.userInput}
                     </span>
                   )}
                 </div>
-                <span className="text-sm text-foreground/60">
+                <span className={`text-sm ${
+                  isDark ? 'text-gray-400' : 'text-gray-600'
+                }`}>
                   {result.timestamp.toLocaleTimeString()}
                 </span>
               </div>
@@ -348,12 +459,22 @@ export default function NumberMemory() {
       )}
 
       {/* Instructions */}
-      <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+      <div className={`border rounded-lg p-6 ${
+        isDark 
+          ? 'bg-blue-950/20 border-blue-800' 
+          : 'bg-blue-50 border-blue-200'
+      }`}>
         <div className="flex items-start space-x-3">
-          <div className="text-blue-600 dark:text-blue-400 text-xl">ℹ️</div>
+          <div className={`text-xl ${
+            isDark ? 'text-blue-400' : 'text-blue-600'
+          }`}>ℹ️</div>
           <div>
-            <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">How to Play</h4>
-            <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
+            <h4 className={`font-medium mb-2 ${
+              isDark ? 'text-blue-200' : 'text-blue-900'
+            }`}>How to Play</h4>
+            <ul className={`text-sm space-y-1 ${
+              isDark ? 'text-blue-300' : 'text-blue-700'
+            }`}>
               <li>• A number sequence will be displayed for a few seconds</li>
               <li>• Memorize the number as quickly as possible</li>
               <li>• Type the exact sequence back when prompted</li>
@@ -366,47 +487,55 @@ export default function NumberMemory() {
       </div>
 
       {/* Performance Guide */}
-      <div className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800 rounded-lg p-6">
-        <h4 className="font-medium mb-4">Performance Guide</h4>
+      <div className={`border rounded-lg p-6 ${
+        isDark 
+          ? 'bg-gray-800 border-gray-700' 
+          : 'bg-gray-50 border-gray-200'
+      }`}>
+        <h4 className={`font-medium mb-4 ${
+          isDark ? 'text-white' : 'text-gray-900'
+        }`}>Performance Guide</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="space-y-2">
             <div className="flex justify-between">
-              <span className="text-purple-600">Superhuman:</span>
-              <span>15+ digits</span>
+              <span className={isDark ? 'text-purple-400' : 'text-purple-600'}>Superhuman:</span>
+              <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>15+ digits</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-indigo-600">Exceptional:</span>
-              <span>12-14 digits</span>
+              <span className={isDark ? 'text-indigo-400' : 'text-indigo-600'}>Exceptional:</span>
+              <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>12-14 digits</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-green-600">Excellent:</span>
-              <span>10-11 digits</span>
+              <span className={isDark ? 'text-green-400' : 'text-green-600'}>Excellent:</span>
+              <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>10-11 digits</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-blue-600">Very Good:</span>
-              <span>8-9 digits</span>
+              <span className={isDark ? 'text-blue-400' : 'text-blue-600'}>Very Good:</span>
+              <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>8-9 digits</span>
             </div>
           </div>
           <div className="space-y-2">
             <div className="flex justify-between">
-              <span className="text-teal-600">Good:</span>
-              <span>6-7 digits</span>
+              <span className={isDark ? 'text-teal-400' : 'text-teal-600'}>Good:</span>
+              <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>6-7 digits</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-yellow-600">Average:</span>
-              <span>4-5 digits</span>
+              <span className={isDark ? 'text-yellow-400' : 'text-yellow-600'}>Average:</span>
+              <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>4-5 digits</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-orange-600">Below Average:</span>
-              <span>2-3 digits</span>
+              <span className={isDark ? 'text-orange-400' : 'text-orange-600'}>Below Average:</span>
+              <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>2-3 digits</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-red-600">Poor:</span>
-              <span>1 digit</span>
+              <span className={isDark ? 'text-red-400' : 'text-red-600'}>Poor:</span>
+              <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>1 digit</span>
             </div>
           </div>
         </div>
-        <div className="mt-4 text-xs text-foreground/60">
+        <div className={`mt-4 text-xs ${
+          isDark ? 'text-gray-400' : 'text-gray-600'
+        }`}>
           <p>Most people can remember 7±2 digits. The world record is over 25 digits!</p>
         </div>
       </div>

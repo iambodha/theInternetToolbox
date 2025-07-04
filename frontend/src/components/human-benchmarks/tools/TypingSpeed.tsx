@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { styles } from '@/lib/styles';
+import { useTheme } from '@/contexts/ThemeContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 // Word lists for different modes
@@ -44,6 +45,9 @@ interface TestSettings {
 }
 
 export default function TypingSpeed() {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+  
   const [isStarted, setIsStarted] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
   const [timeLeft, setTimeLeft] = useState(30);
@@ -442,17 +446,25 @@ export default function TypingSpeed() {
       {!isStarted ? (
         <div className="space-y-6">
           {/* Settings */}
-          <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg space-y-4">
-            <h3 className="text-lg font-semibold mb-4">Test Settings</h3>
+          <div className={`p-6 rounded-lg border ${
+            isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+          }`}>
+            <h3 className={`text-lg font-semibold mb-4 ${
+              isDark ? 'text-white' : 'text-gray-900'
+            }`}>Test Settings</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Mode Selection */}
               <div>
-                <label className="block text-sm font-medium mb-2">Mode</label>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>Mode</label>
                 <select
                   value={settings.mode}
                   onChange={(e) => setSettings(prev => ({ ...prev, mode: e.target.value as 'words' | 'random' | 'numbers' }))}
-                  className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                  className={`w-full p-2 border rounded-lg ${
+                    isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
+                  }`}
                 >
                   <option value="words">Common Words</option>
                   <option value="random">Random Letters</option>
@@ -462,11 +474,15 @@ export default function TypingSpeed() {
 
               {/* Test Type Selection */}
               <div>
-                <label className="block text-sm font-medium mb-2">Test Type</label>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>Test Type</label>
                 <select
                   value={settings.testType}
                   onChange={(e) => setSettings(prev => ({ ...prev, testType: e.target.value as 'duration' | 'wordCount' }))}
-                  className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                  className={`w-full p-2 border rounded-lg ${
+                    isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
+                  }`}
                 >
                   <option value="duration">By Duration</option>
                   <option value="wordCount">By Word Count</option>
@@ -476,11 +492,15 @@ export default function TypingSpeed() {
               {/* Duration Selection */}
               {settings.testType === 'duration' && (
                 <div>
-                  <label className="block text-sm font-medium mb-2">Duration (seconds)</label>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDark ? 'text-gray-300' : 'text-gray-700'
+                  }`}>Duration (seconds)</label>
                   <select
                     value={settings.duration}
                     onChange={(e) => setSettings(prev => ({ ...prev, duration: parseInt(e.target.value) as 15 | 30 | 60 | 120 }))}
-                    className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                    className={`w-full p-2 border rounded-lg ${
+                      isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
+                    }`}
                   >
                     <option value={15}>15s</option>
                     <option value={30}>30s</option>
@@ -493,11 +513,15 @@ export default function TypingSpeed() {
               {/* Word Count Selection */}
               {settings.testType === 'wordCount' && (
                 <div>
-                  <label className="block text-sm font-medium mb-2">Word Count</label>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDark ? 'text-gray-300' : 'text-gray-700'
+                  }`}>Word Count</label>
                   <select
                     value={settings.wordCount}
                     onChange={(e) => setSettings(prev => ({ ...prev, wordCount: parseInt(e.target.value) as 25 | 50 | 100 | 200 }))}
-                    className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                    className={`w-full p-2 border rounded-lg ${
+                      isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
+                    }`}
                   >
                     <option value={25}>25 words</option>
                     <option value={50}>50 words</option>
@@ -509,7 +533,9 @@ export default function TypingSpeed() {
 
               {/* Options */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium">Options</label>
+                <label className={`block text-sm font-medium ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>Options</label>
                 <div className="space-y-1">
                   <label className="flex items-center space-x-2">
                     <input
@@ -517,8 +543,13 @@ export default function TypingSpeed() {
                       checked={settings.includePunctuation}
                       onChange={(e) => setSettings(prev => ({ ...prev, includePunctuation: e.target.checked }))}
                       disabled={settings.mode !== 'words'}
+                      className={`${
+                        isDark ? 'text-blue-500' : 'text-blue-600'
+                      } focus:ring-blue-500`}
                     />
-                    <span className="text-sm">Punctuation</span>
+                    <span className={`text-sm ${
+                      isDark ? 'text-gray-300' : 'text-gray-700'
+                    }`}>Punctuation</span>
                   </label>
                   <label className="flex items-center space-x-2">
                     <input
@@ -526,8 +557,13 @@ export default function TypingSpeed() {
                       checked={settings.includeNumbers}
                       onChange={(e) => setSettings(prev => ({ ...prev, includeNumbers: e.target.checked }))}
                       disabled={settings.mode !== 'words'}
+                      className={`${
+                        isDark ? 'text-blue-500' : 'text-blue-600'
+                      } focus:ring-blue-500`}
                     />
-                    <span className="text-sm">Numbers</span>
+                    <span className={`text-sm ${
+                      isDark ? 'text-gray-300' : 'text-gray-700'
+                    }`}>Numbers</span>
                   </label>
                 </div>
               </div>
@@ -535,9 +571,15 @@ export default function TypingSpeed() {
           </div>
 
           {/* Instructions */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg text-center">
-            <h3 className="text-lg font-semibold mb-2">Ready to Test Your Typing Speed?</h3>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
+          <div className={`p-6 rounded-lg border text-center ${
+            isDark ? 'bg-blue-900/20 border-blue-800' : 'bg-blue-50 border-blue-200'
+          }`}>
+            <h3 className={`text-lg font-semibold mb-2 ${
+              isDark ? 'text-blue-200' : 'text-blue-900'
+            }`}>Ready to Test Your Typing Speed?</h3>
+            <p className={`mb-4 ${
+              isDark ? 'text-blue-300' : 'text-blue-700'
+            }`}>
               Type the generated text as quickly and accurately as possible. 
               The test will automatically end when time runs out or you complete all the text.
             </p>
@@ -556,19 +598,27 @@ export default function TypingSpeed() {
             <div className="flex items-center space-x-4">
               {settings.testType === 'duration' ? (
                 <>
-                  <div className="text-2xl font-bold text-blue-600">
+                  <div className={`text-2xl font-bold ${
+                    isDark ? 'text-blue-400' : 'text-blue-600'
+                  }`}>
                     {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
                   </div>
-                  <div className="text-sm text-gray-500">
+                  <div className={`text-sm ${
+                    isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
                     {settings.mode} • {settings.duration}s
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="text-2xl font-bold text-green-600">
+                  <div className={`text-2xl font-bold ${
+                    isDark ? 'text-green-400' : 'text-green-600'
+                  }`}>
                     {Math.round((typedText.split(' ').filter(w => w.trim()).length / settings.wordCount) * 100)}%
                   </div>
-                  <div className="text-sm text-gray-500">
+                  <div className={`text-sm ${
+                    isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
                     {settings.mode} • {typedText.split(' ').filter(w => w.trim()).length}/{settings.wordCount} words
                   </div>
                 </>
@@ -576,14 +626,20 @@ export default function TypingSpeed() {
             </div>
             <button
               onClick={resetTest}
-              className="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors"
+              className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+                isDark 
+                  ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                  : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+              }`}
             >
               Reset
             </button>
           </div>
 
           {/* Text Display */}
-          <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg leading-relaxed font-mono relative">
+          <div className={`p-6 rounded-lg leading-relaxed font-mono relative border ${
+            isDark ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
+          }`}>
             <div className="min-h-32">
               {textDisplay}
             </div>
@@ -596,61 +652,99 @@ export default function TypingSpeed() {
             value={typedText}
             onChange={(e) => handleInputChange(e.target.value)}
             disabled={isFinished}
-            className="w-full p-4 text-lg border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600"
+            className={`w-full p-4 text-lg border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              isDark 
+                ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400' 
+                : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+            }`}
             placeholder="Start typing here..."
           />
 
           {/* Real-time Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            <div className={`p-4 rounded-lg text-center border ${
+              isDark 
+                ? 'bg-blue-900/20 border-blue-800 text-blue-400' 
+                : 'bg-blue-50 border-blue-200 text-blue-600'
+            }`}>
+              <div className="text-2xl font-bold">
                 {currentStats.wpm}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-300">WPM</div>
+              <div className={`text-sm ${
+                isDark ? 'text-blue-300' : 'text-blue-700'
+              }`}>WPM</div>
             </div>
-            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+            <div className={`p-4 rounded-lg text-center border ${
+              isDark 
+                ? 'bg-green-900/20 border-green-800 text-green-400' 
+                : 'bg-green-50 border-green-200 text-green-600'
+            }`}>
+              <div className="text-2xl font-bold">
                 {currentStats.accuracy}%
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-300">Accuracy</div>
+              <div className={`text-sm ${
+                isDark ? 'text-green-300' : 'text-green-700'
+              }`}>Accuracy</div>
             </div>
-            <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+            <div className={`p-4 rounded-lg text-center border ${
+              isDark 
+                ? 'bg-orange-900/20 border-orange-800 text-orange-400' 
+                : 'bg-orange-50 border-orange-200 text-orange-600'
+            }`}>
+              <div className="text-2xl font-bold">
                 {errors}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-300">Errors</div>
+              <div className={`text-sm ${
+                isDark ? 'text-orange-300' : 'text-orange-700'
+              }`}>Errors</div>
             </div>
-            <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+            <div className={`p-4 rounded-lg text-center border ${
+              isDark 
+                ? 'bg-purple-900/20 border-purple-800 text-purple-400' 
+                : 'bg-purple-50 border-purple-200 text-purple-600'
+            }`}>
+              <div className="text-2xl font-bold">
                 {currentIndex}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-300">Characters</div>
+              <div className={`text-sm ${
+                isDark ? 'text-purple-300' : 'text-purple-700'
+              }`}>Characters</div>
             </div>
           </div>
 
           {/* Real-time Performance Graph */}
           {realTimeStats.length > 1 && (
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
-              <h4 className="text-lg font-semibold mb-4 dark:text-white">Live Performance</h4>
+            <div className={`p-4 rounded-lg border ${
+              isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+            }`}>
+              <h4 className={`text-lg font-semibold mb-4 ${
+                isDark ? 'text-white' : 'text-gray-900'
+              }`}>Live Performance</h4>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={realTimeStats.map((stat) => ({ 
                   second: stat.timestamp,
                   wpm: stat.wpm, 
                   accuracy: stat.accuracy 
                 }))}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#374151" : "#E5E7EB"} opacity={0.3} />
                   <XAxis 
                     dataKey="second" 
-                    tick={{ fontSize: 12 }}
+                    tick={{ fontSize: 12, fill: isDark ? "#9CA3AF" : "#6B7280" }}
                     label={{ value: 'Seconds', position: 'insideBottom', offset: -5 }}
                   />
                   <YAxis 
-                    tick={{ fontSize: 12 }}
+                    tick={{ fontSize: 12, fill: isDark ? "#9CA3AF" : "#6B7280" }}
                     label={{ value: 'WPM / Accuracy %', angle: -90, position: 'insideLeft' }}
                   />
                   <Tooltip 
                     formatter={(value, name) => [value, name === 'wpm' ? 'WPM' : 'Accuracy %']}
                     labelFormatter={(label) => `${label}s`}
+                    contentStyle={{
+                      backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+                      border: isDark ? '1px solid #374151' : '1px solid #E5E7EB',
+                      borderRadius: '8px',
+                      color: isDark ? '#F3F4F6' : '#1F2937'
+                    }}
                   />
                   <Line 
                     type="monotone" 
@@ -675,11 +769,19 @@ export default function TypingSpeed() {
 
           {isFinished && (
             <div className="text-center space-y-4">
-              <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-lg">
-                <h3 className="text-xl font-semibold text-green-800 dark:text-green-200 mb-2">
+              <div className={`p-6 rounded-lg border ${
+                isDark 
+                  ? 'bg-green-900/20 border-green-800' 
+                  : 'bg-green-50 border-green-200'
+              }`}>
+                <h3 className={`text-xl font-semibold mb-2 ${
+                  isDark ? 'text-green-200' : 'text-green-800'
+                }`}>
                   Test Complete!
                 </h3>
-                <p className="text-green-700 dark:text-green-300">
+                <p className={`${
+                  isDark ? 'text-green-300' : 'text-green-700'
+                }`}>
                   Final Speed: {currentStats.wpm} WPM with {currentStats.accuracy}% accuracy
                 </p>
               </div>
@@ -705,11 +807,17 @@ export default function TypingSpeed() {
       {/* Statistics History */}
       {statsHistory.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Performance History</h3>
+          <h3 className={`text-lg font-semibold ${
+            isDark ? 'text-white' : 'text-gray-900'
+          }`}>Performance History</h3>
           
           {/* History Graph */}
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
-            <h4 className="text-lg font-semibold mb-4 dark:text-white">Performance History</h4>
+          <div className={`p-4 rounded-lg border ${
+            isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+          }`}>
+            <h4 className={`text-lg font-semibold mb-4 ${
+              isDark ? 'text-white' : 'text-gray-900'
+            }`}>Performance History</h4>
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={statsHistory.map((stat, index) => ({ 
                 test: index + 1, 
@@ -717,14 +825,14 @@ export default function TypingSpeed() {
                 accuracy: stat.accuracy,
                 errors: stat.errors
               }))}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+                <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#374151" : "#E5E7EB"} opacity={0.3} />
                 <XAxis 
                   dataKey="test" 
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 12, fill: isDark ? "#9CA3AF" : "#6B7280" }}
                   label={{ value: 'Test Number', position: 'insideBottom', offset: -5 }}
                 />
                 <YAxis 
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 12, fill: isDark ? "#9CA3AF" : "#6B7280" }}
                   label={{ value: 'WPM / Accuracy %', angle: -90, position: 'insideLeft' }}
                 />
                 <Tooltip 
@@ -735,6 +843,12 @@ export default function TypingSpeed() {
                     return [value, name];
                   }}
                   labelFormatter={(label) => `Test ${label}`}
+                  contentStyle={{
+                    backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+                    border: isDark ? '1px solid #374151' : '1px solid #E5E7EB',
+                    borderRadius: '8px',
+                    color: isDark ? '#F3F4F6' : '#1F2937'
+                  }}
                 />
                 <Line 
                   type="monotone" 
@@ -766,15 +880,15 @@ export default function TypingSpeed() {
             <div className="flex justify-center space-x-6 mt-2 text-sm">
               <div className="flex items-center space-x-2">
                 <div className="w-4 h-0.5 bg-blue-500"></div>
-                <span>WPM</span>
+                <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>WPM</span>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="w-4 h-0.5 bg-green-500"></div>
-                <span>Accuracy %</span>
+                <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>Accuracy %</span>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="w-4 h-0.5 bg-red-500 border-dashed"></div>
-                <span>Errors</span>
+                <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>Errors</span>
               </div>
             </div>
           </div>
@@ -782,14 +896,22 @@ export default function TypingSpeed() {
           {/* Recent Results */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {statsHistory.slice(-6).reverse().map((stat, statIndex) => (
-              <div key={statIndex} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+              <div key={statIndex} className={`p-4 rounded-lg border ${
+                isDark ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
+              }`}>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="font-semibold">{stat.wpm} WPM</span>
-                  <span className="text-sm text-gray-500">
+                  <span className={`font-semibold ${
+                    isDark ? 'text-white' : 'text-gray-900'
+                  }`}>{stat.wpm} WPM</span>
+                  <span className={`text-sm ${
+                    isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
                     {new Date(stat.timestamp).toLocaleTimeString()}
                   </span>
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-300">
+                <div className={`text-sm ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>
                   Accuracy: {stat.accuracy}% • Errors: {stat.errors}
                 </div>
               </div>
@@ -799,29 +921,53 @@ export default function TypingSpeed() {
           {/* Overall Stats */}
           {statsHistory.length >= 3 && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg text-center">
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              <div className={`p-4 rounded-lg text-center border ${
+                isDark 
+                  ? 'bg-blue-900/20 border-blue-800 text-blue-400' 
+                  : 'bg-blue-50 border-blue-200 text-blue-600'
+              }`}>
+                <div className="text-2xl font-bold">
                   {Math.max(...statsHistory.map(s => s.wpm))}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-300">Best WPM</div>
+                <div className={`text-sm ${
+                  isDark ? 'text-blue-300' : 'text-blue-700'
+                }`}>Best WPM</div>
               </div>
-              <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg text-center">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+              <div className={`p-4 rounded-lg text-center border ${
+                isDark 
+                  ? 'bg-green-900/20 border-green-800 text-green-400' 
+                  : 'bg-green-50 border-green-200 text-green-600'
+              }`}>
+                <div className="text-2xl font-bold">
                   {Math.round(statsHistory.reduce((sum, s) => sum + s.wpm, 0) / statsHistory.length)}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-300">Average WPM</div>
+                <div className={`text-sm ${
+                  isDark ? 'text-green-300' : 'text-green-700'
+                }`}>Average WPM</div>
               </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg text-center">
-                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+              <div className={`p-4 rounded-lg text-center border ${
+                isDark 
+                  ? 'bg-purple-900/20 border-purple-800 text-purple-400' 
+                  : 'bg-purple-50 border-purple-200 text-purple-600'
+              }`}>
+                <div className="text-2xl font-bold">
                   {Math.round(statsHistory.reduce((sum, s) => sum + s.accuracy, 0) / statsHistory.length)}%
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-300">Average Accuracy</div>
+                <div className={`text-sm ${
+                  isDark ? 'text-purple-300' : 'text-purple-700'
+                }`}>Average Accuracy</div>
               </div>
-              <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg text-center">
-                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+              <div className={`p-4 rounded-lg text-center border ${
+                isDark 
+                  ? 'bg-orange-900/20 border-orange-800 text-orange-400' 
+                  : 'bg-orange-50 border-orange-200 text-orange-600'
+              }`}>
+                <div className="text-2xl font-bold">
                   {statsHistory.length}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-300">Tests Completed</div>
+                <div className={`text-sm ${
+                  isDark ? 'text-orange-300' : 'text-orange-700'
+                }`}>Tests Completed</div>
               </div>
             </div>
           )}
