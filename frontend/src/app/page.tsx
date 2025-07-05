@@ -34,40 +34,42 @@ export default function Home() {
   // All available tools with their routes
   const allTools = [
     // PDF Tools
-    { name: 'PDF Merger', description: 'Combine multiple PDF files into one', category: 'PDF Tools', route: '/pdf-merger', icon: '🔗' },
-    { name: 'PDF Splitter', description: 'Extract pages from PDF or split into multiple files', category: 'PDF Tools', route: '/pdf-splitter', icon: '✂️' },
-    { name: 'PDF Compressor', description: 'Reduce PDF file size while maintaining quality', category: 'PDF Tools', route: '/pdf-compressor', icon: '🗜️' },
-    { name: 'PDF Rotator', description: 'Rotate PDF pages to correct orientation', category: 'PDF Tools', route: '/pdf-rotator', icon: '🔄' },
-    { name: 'Extract Pages', description: 'Extract specific pages from PDF', category: 'PDF Tools', route: '/pdf-extract-pages', icon: '📄' },
-    { name: 'Delete Pages', description: 'Remove unwanted pages from PDF', category: 'PDF Tools', route: '/pdf-delete-pages', icon: '🗑️' },
-    { name: 'Add Watermark', description: 'Add text or image watermarks to PDF', category: 'PDF Tools', route: '/pdf-watermark', icon: '💧' },
-    { name: 'PDF OCR', description: 'Extract text from scanned documents using OCR', category: 'PDF Tools', route: '/pdf-ocr', icon: '🔍' },
+    { name: 'PDF Merger', description: 'Combine multiple PDF files into one', category: 'PDF Tools', route: '/pdf-tools/merge', icon: '🔗' },
+    { name: 'PDF Splitter', description: 'Extract pages from PDF or split into multiple files', category: 'PDF Tools', route: '/pdf-tools/split', icon: '✂️' },
+    { name: 'PDF Compressor', description: 'Reduce PDF file size while maintaining quality', category: 'PDF Tools', route: '/pdf-tools/compress', icon: '🗜️' },
+    { name: 'PDF Rotator', description: 'Rotate PDF pages to correct orientation', category: 'PDF Tools', route: '/pdf-tools/rotate', icon: '🔄' },
+    { name: 'Extract Pages', description: 'Extract specific pages from PDF', category: 'PDF Tools', route: '/pdf-tools/extract', icon: '📄' },
+    { name: 'Delete Pages', description: 'Remove unwanted pages from PDF', category: 'PDF Tools', route: '/pdf-tools/delete', icon: '🗑️' },
+    { name: 'Add Watermark', description: 'Add text or image watermarks to PDF', category: 'PDF Tools', route: '/pdf-tools/watermark', icon: '💧' },
+    { name: 'PDF OCR', description: 'Extract text from scanned documents using OCR', category: 'PDF Tools', route: '/pdf-tools/ocr', icon: '🔍' },
     
     // Text Tools
-    { name: 'Text Formatter', description: 'Format and style text content', category: 'Text Tools', route: '/text-formatter', icon: '📝' },
-    { name: 'Text Counter', description: 'Count words, characters, and lines', category: 'Text Tools', route: '/text-counter', icon: '🔢' },
-    { name: 'Text Converter', description: 'Convert text between different formats', category: 'Text Tools', route: '/text-converter', icon: '🔄' },
-    { name: 'Text Generator', description: 'Generate placeholder and sample text', category: 'Text Tools', route: '/text-generator', icon: '✨' },
-    { name: 'Text Analyzer', description: 'Analyze text structure and readability', category: 'Text Tools', route: '/text-analyzer', icon: '📊' },
-    { name: 'Text Cleaner', description: 'Clean and normalize text content', category: 'Text Tools', route: '/text-cleaner', icon: '🧹' },
-    { name: 'Text Comparator', description: 'Compare differences between texts', category: 'Text Tools', route: '/text-comparator', icon: '🔍' },
-    { name: 'Text Encoder', description: 'Encode and decode text in various formats', category: 'Text Tools', route: '/text-encoder', icon: '🔐' },
-    { name: 'Text Extractor', description: 'Extract text from various file formats', category: 'Text Tools', route: '/text-extractor', icon: '📤' },
-    { name: 'Text Sorter', description: 'Sort and organize text content', category: 'Text Tools', route: '/text-sorter', icon: '📋' },
+    { name: 'Text Formatter', description: 'Format and style text content', category: 'Text Tools', route: '/text-tools/formatter', icon: '📝' },
+    { name: 'Text Counter', description: 'Count words, characters, and lines', category: 'Text Tools', route: '/text-tools/counter', icon: '🔢' },
+    { name: 'Text Converter', description: 'Convert text between different formats', category: 'Text Tools', route: '/text-tools/converter', icon: '🔄' },
+    { name: 'Text Generator', description: 'Generate placeholder and sample text', category: 'Text Tools', route: '/text-tools/generator', icon: '✨' },
+    { name: 'Text Analyzer', description: 'Analyze text structure and readability', category: 'Text Tools', route: '/text-tools/analyzer', icon: '📊' },
+    { name: 'Text Cleaner', description: 'Clean and normalize text content', category: 'Text Tools', route: '/text-tools/cleaner', icon: '🧹' },
+    { name: 'Text Comparator', description: 'Compare differences between texts', category: 'Text Tools', route: '/text-tools/comparator', icon: '🔍' },
+    { name: 'Text Encoder', description: 'Encode and decode text in various formats', category: 'Text Tools', route: '/text-tools/encoder', icon: '🔐' },
+    { name: 'Text Extractor', description: 'Extract text from various file formats', category: 'Text Tools', route: '/text-tools/extractor', icon: '📤' },
+    { name: 'Text Sorter', description: 'Sort and organize text content', category: 'Text Tools', route: '/text-tools/sorter', icon: '📋' },
     
     // Image Tools
-    { name: 'Image Converter', description: 'Convert between different image formats', category: 'Image Tools', route: '/image-converter', icon: '🔄' },
-    { name: 'Image Resizer', description: 'Resize images by exact dimensions or percentage', category: 'Image Tools', route: '/image-resizer', icon: '📏' },
-    { name: 'Image Optimizer', description: 'Reduce image file sizes while maintaining quality', category: 'Image Tools', route: '/image-optimizer', icon: '⚡' },
-    { name: 'Background Remover', description: 'Remove backgrounds from images to create transparent PNGs', category: 'Image Tools', route: '/background-remover', icon: '✂️' },
+    { name: 'Image Converter', description: 'Convert between different image formats', category: 'Image Tools', route: '/image-tools/converter', icon: '🔄' },
+    { name: 'Image Resizer', description: 'Resize images by exact dimensions or percentage', category: 'Image Tools', route: '/image-tools/resizer', icon: '📏' },
+    { name: 'Image Optimizer', description: 'Reduce image file sizes while maintaining quality', category: 'Image Tools', route: '/image-tools/optimizer', icon: '⚡' },
+    { name: 'Background Remover', description: 'Remove backgrounds from images to create transparent PNGs', category: 'Image Tools', route: '/image-tools/background-remover', icon: '✂️' },
+    { name: 'Image Pixelify', description: 'Transform images into retro pixel art with customizable effects', category: 'Image Tools', route: '/image-tools/pixelify', icon: '🎮' },
+    { name: 'Color Palette Extractor', description: 'Extract dominant colors and create color palettes from images', category: 'Image Tools', route: '/image-tools/color-palette', icon: '🎨' },
     
     // Video Tools
-    { name: 'Video Speed Controller', description: 'Change video playback speed - create slow motion or time-lapse effects', category: 'Video Tools', route: '/video-tools', icon: '⏱️' },
-    { name: 'Video Frame Extractor', description: 'Extract individual frames or thumbnails from videos as images', category: 'Video Tools', route: '/video-tools', icon: '🖼️' },
-    { name: 'Video Trimmer', description: 'Cut and trim video segments to exact timestamps', category: 'Video Tools', route: '/video-tools', icon: '✂️' },
-    { name: 'Video Rotator', description: 'Rotate videos by 90°, 180°, or 270° to correct orientation', category: 'Video Tools', route: '/video-tools', icon: '🔄' },
-    { name: 'Video Watermark', description: 'Add text or image watermarks to protect your videos', category: 'Video Tools', route: '/video-tools', icon: '💧' },
-    { name: 'Video Compressor', description: 'Reduce video file sizes while maintaining quality', category: 'Video Tools', route: '/video-tools', icon: '🗜️' },
+    { name: 'Video Speed Controller', description: 'Change video playback speed - create slow motion or time-lapse effects', category: 'Video Tools', route: '/video-tools/speed-controller', icon: '⏱️' },
+    { name: 'Video Frame Extractor', description: 'Extract individual frames or thumbnails from videos as images', category: 'Video Tools', route: '/video-tools/frame-extractor', icon: '🖼️' },
+    { name: 'Video Trimmer', description: 'Cut and trim video segments to exact timestamps', category: 'Video Tools', route: '/video-tools/trimmer', icon: '✂️' },
+    { name: 'Video Rotator', description: 'Rotate videos by 90°, 180°, or 270° to correct orientation', category: 'Video Tools', route: '/video-tools/rotator', icon: '🔄' },
+    { name: 'Video Watermark', description: 'Add text or image watermarks to protect your videos', category: 'Video Tools', route: '/video-tools/watermark', icon: '💧' },
+    { name: 'Video Compressor', description: 'Reduce video file sizes while maintaining quality', category: 'Video Tools', route: '/video-tools/compressor', icon: '🗜️' },
     
     // File Conversion Tools
     { name: 'Document Converter', description: 'Convert documents between formats', category: 'File Conversion', route: '/document-converter', icon: '📄' },
@@ -77,11 +79,15 @@ export default function Home() {
     //QR Code Generator
     { name: 'QR Code Generator', description: 'Generate QR codes for URLs, text, WiFi, and more', category: 'Text Tools', route: '/qr-generator', icon: '📱' },
     
-    // Human Benchmarks
-    { name: 'Reaction Time Test', description: 'Test how quickly you can react to visual stimuli', category: 'Human Benchmarks', route: '/human-benchmarks', icon: '⚡' },
-    { name: 'Number Memory Test', description: 'How many digits can you remember in sequence?', category: 'Human Benchmarks', route: '/human-benchmarks', icon: '🧠' },
-    { name: 'Typing Speed Test', description: 'Test your typing speed and accuracy', category: 'Human Benchmarks', route: '/human-benchmarks', icon: '⌨️' },
-    { name: 'Visual Memory Test', description: 'Test your ability to remember visual patterns', category: 'Human Benchmarks', route: '/human-benchmarks', icon: '👁️' },
+    // Human Benchmarks - All 8 tools now included with nested routes
+    { name: 'Reaction Time Test', description: 'Test how quickly you can react to visual stimuli', category: 'Human Benchmarks', route: '/human-benchmarks/reaction-time', icon: '⚡' },
+    { name: 'Aim Trainer', description: 'Test your mouse precision and targeting speed', category: 'Human Benchmarks', route: '/human-benchmarks/aim-trainer', icon: '🎯' },
+    { name: 'Number Memory Test', description: 'How many digits can you remember in sequence?', category: 'Human Benchmarks', route: '/human-benchmarks/number-memory', icon: '🧠' },
+    { name: 'Verbal Memory Test', description: 'Remember words and identify if you\'ve seen them before', category: 'Human Benchmarks', route: '/human-benchmarks/verbal-memory', icon: '📝' },
+    { name: 'Typing Speed Test', description: 'Test your typing speed and accuracy with real text', category: 'Human Benchmarks', route: '/human-benchmarks/typing-speed', icon: '⌨️' },
+    { name: 'Visual Acuity Test', description: 'Test how well you can see small details and symbols', category: 'Human Benchmarks', route: '/human-benchmarks/visual-acuity', icon: '👁️' },
+    { name: 'Color Strength Test', description: 'Test your color discrimination by finding the odd color out', category: 'Human Benchmarks', route: '/human-benchmarks/color-strength', icon: '🎨' },
+    { name: 'Spell Bee', description: 'Listen to words and spell them correctly using text-to-speech', category: 'Human Benchmarks', route: '/human-benchmarks/spell-bee', icon: '🐝' },
     
     // File Corruption Tools
     { name: 'File Corruptor', description: 'Create corrupted files with custom sizes', category: 'File Corruption', route: '/file-corruptor', icon: '🔧' },

@@ -1,15 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { styles } from '@/lib/styles';
-import ReactionTime from './tools/ReactionTime';
-import NumberMemory from './tools/NumberMemory';
-import TypingSpeed from './tools/TypingSpeed';
-import VisualAcuity from './tools/VisualAcuity';
-import VerbalMemory from './tools/VerbalMemory';
-import AimTrainer from './tools/AimTrainer';
-import SpellBee from './tools/SpellBee';
-import ColorStrength from './tools/ColorStrength';
 
 interface BenchmarkTool {
   id: string;
@@ -17,27 +10,27 @@ interface BenchmarkTool {
   description: string;
   icon: string;
   category: 'reaction' | 'memory' | 'typing' | 'visual' | 'language';
-  component: React.ComponentType;
+  route: string;
 }
 
 const benchmarkTools: BenchmarkTool[] = [
   // Reaction Tests
-  { id: 'reaction-time', title: 'Reaction Time', description: 'Test how quickly you can react to visual stimuli', icon: '⚡', category: 'reaction', component: ReactionTime },
-  { id: 'aim-trainer', title: 'Aim Trainer', description: 'Test your mouse precision and targeting speed', icon: '🎯', category: 'reaction', component: AimTrainer },
+  { id: 'reaction-time', title: 'Reaction Time', description: 'Test how quickly you can react to visual stimuli', icon: '⚡', category: 'reaction', route: '/human-benchmarks/reaction-time' },
+  { id: 'aim-trainer', title: 'Aim Trainer', description: 'Test your mouse precision and targeting speed', icon: '🎯', category: 'reaction', route: '/human-benchmarks/aim-trainer' },
   
   // Memory Tests
-  { id: 'number-memory', title: 'Number Memory', description: 'How many digits can you remember in sequence?', icon: '🧠', category: 'memory', component: NumberMemory },
-  { id: 'verbal-memory', title: 'Verbal Memory', description: 'Remember words and identify if you\'ve seen them before', icon: '📝', category: 'memory', component: VerbalMemory },
+  { id: 'number-memory', title: 'Number Memory', description: 'How many digits can you remember in sequence?', icon: '🧠', category: 'memory', route: '/human-benchmarks/number-memory' },
+  { id: 'verbal-memory', title: 'Verbal Memory', description: 'Remember words and identify if you\'ve seen them before', icon: '📝', category: 'memory', route: '/human-benchmarks/verbal-memory' },
   
   // Typing Tests
-  { id: 'typing-speed', title: 'Typing Speed', description: 'Test your typing speed and accuracy with real text', icon: '⌨️', category: 'typing', component: TypingSpeed },
+  { id: 'typing-speed', title: 'Typing Speed', description: 'Test your typing speed and accuracy with real text', icon: '⌨️', category: 'typing', route: '/human-benchmarks/typing-speed' },
   
   // Visual Tests
-  { id: 'visual-acuity', title: 'Visual Acuity', description: 'Test how well you can see small details and symbols', icon: '👁️', category: 'visual', component: VisualAcuity },
-  { id: 'color-strength', title: 'Color Strength', description: 'Test your color discrimination by finding the odd color out', icon: '🎨', category: 'visual', component: ColorStrength },
+  { id: 'visual-acuity', title: 'Visual Acuity', description: 'Test how well you can see small details and symbols', icon: '👁️', category: 'visual', route: '/human-benchmarks/visual-acuity' },
+  { id: 'color-strength', title: 'Color Strength', description: 'Test your color discrimination by finding the odd color out', icon: '🎨', category: 'visual', route: '/human-benchmarks/color-strength' },
   
   // Language Tests
-  { id: 'spell-bee', title: 'Spell Bee', description: 'Listen to words and spell them correctly using text-to-speech', icon: '🐝', category: 'language', component: SpellBee },
+  { id: 'spell-bee', title: 'Spell Bee', description: 'Listen to words and spell them correctly using text-to-speech', icon: '🐝', category: 'language', route: '/human-benchmarks/spell-bee' },
 ];
 
 const categories = [
@@ -50,46 +43,16 @@ const categories = [
 ];
 
 export default function HumanBenchmarksGrid() {
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedTool, setSelectedTool] = useState<string | null>(null);
 
   const filteredTools = selectedCategory === 'all' 
     ? benchmarkTools 
     : benchmarkTools.filter(tool => tool.category === selectedCategory);
 
-  const selectedToolComponent = benchmarkTools.find(tool => tool.id === selectedTool);
-
-  if (selectedTool && selectedToolComponent) {
-    const ToolComponent = selectedToolComponent.component;
-    return (
-      <div className={styles.layout.container}>
-        {/* Back button */}
-        <button
-          onClick={() => setSelectedTool(null)}
-          className={styles.button.back}
-        >
-          <span>←</span>
-          <span>Back to Human Benchmarks</span>
-        </button>
-
-        {/* Tool header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center space-x-3 mb-4">
-            <span className="text-4xl">{selectedToolComponent.icon}</span>
-            <h2 className={styles.toolTitle.title}>
-              {selectedToolComponent.title}
-            </h2>
-          </div>
-          <p className={styles.toolTitle.description}>
-            {selectedToolComponent.description}
-          </p>
-        </div>
-
-        {/* Tool component */}
-        <ToolComponent />
-      </div>
-    );
-  }
+  const handleToolClick = (route: string) => {
+    router.push(route);
+  };
 
   return (
     <div className={styles.layout.container}>
@@ -115,7 +78,7 @@ export default function HumanBenchmarksGrid() {
         {filteredTools.map((tool) => (
           <div
             key={tool.id}
-            onClick={() => setSelectedTool(tool.id)}
+            onClick={() => handleToolClick(tool.route)}
             className={styles.card.base}
           >
             <div className={styles.card.content}>

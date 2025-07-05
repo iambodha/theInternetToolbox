@@ -1,15 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { FilterButton, BackButton } from '@/components/ui/Button';
+import { useRouter } from 'next/navigation';
+import { FilterButton } from '@/components/ui/Button';
 import { ToolCard, ToolGrid, FilterGrid } from '@/components/ui/Card';
 import { styles } from '@/lib/styles';
-import ImageConverter from './tools/ImageConverter';
-import ImageResizer from './tools/ImageResizer';
-import ImageOptimizer from './tools/ImageOptimizer';
-import BackgroundRemover from './tools/BackgroundRemover';
-import ImagePixelify from './tools/ImagePixelify';
-import ColorPaletteExtractor from './tools/ColorPaletteExtractor';
 
 interface ImageTool {
   id: string;
@@ -17,23 +12,23 @@ interface ImageTool {
   description: string;
   icon: string;
   category: 'convert' | 'edit' | 'optimize' | 'analyze';
-  component: React.ComponentType;
+  route: string;
 }
 
 const imageTools: ImageTool[] = [
   // Convert Tools
-  { id: 'converter', title: 'Image Converter', description: 'Convert between different image formats like JPG, PNG, WebP, and more', icon: '🔄', category: 'convert', component: ImageConverter },
+  { id: 'converter', title: 'Image Converter', description: 'Convert between different image formats like JPG, PNG, WebP, and more', icon: '🔄', category: 'convert', route: '/image-tools/converter' },
   
   // Edit Tools
-  { id: 'resizer', title: 'Image Resizer', description: 'Resize images by exact dimensions or percentage while maintaining quality', icon: '📏', category: 'edit', component: ImageResizer },
-  { id: 'background-remover', title: 'Background Remover', description: 'Remove backgrounds from images to create transparent PNGs', icon: '✂️', category: 'edit', component: BackgroundRemover },
-  { id: 'pixelify', title: 'Image Pixelify', description: 'Transform images into retro pixel art with customizable effects', icon: '🎮', category: 'edit', component: ImagePixelify },
+  { id: 'resizer', title: 'Image Resizer', description: 'Resize images by exact dimensions or percentage while maintaining quality', icon: '📏', category: 'edit', route: '/image-tools/resizer' },
+  { id: 'background-remover', title: 'Background Remover', description: 'Remove backgrounds from images to create transparent PNGs', icon: '✂️', category: 'edit', route: '/image-tools/background-remover' },
+  { id: 'pixelify', title: 'Image Pixelify', description: 'Transform images into retro pixel art with customizable effects', icon: '🎮', category: 'edit', route: '/image-tools/pixelify' },
   
   // Optimize Tools
-  { id: 'optimizer', title: 'Image Optimizer', description: 'Reduce image file sizes while maintaining visual quality', icon: '⚡', category: 'optimize', component: ImageOptimizer },
+  { id: 'optimizer', title: 'Image Optimizer', description: 'Reduce image file sizes while maintaining visual quality', icon: '⚡', category: 'optimize', route: '/image-tools/optimizer' },
 
   // Analyze Tools
-  { id: 'color-palette', title: 'Color Palette Extractor', description: 'Extract dominant colors and create color palettes from images', icon: '🎨', category: 'analyze', component: ColorPaletteExtractor },
+  { id: 'color-palette', title: 'Color Palette Extractor', description: 'Extract dominant colors and create color palettes from images', icon: '🎨', category: 'analyze', route: '/image-tools/color-palette' },
 ];
 
 const categories = [
@@ -45,34 +40,16 @@ const categories = [
 ];
 
 export default function ImageToolsGrid() {
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedTool, setSelectedTool] = useState<string | null>(null);
 
   const filteredTools = selectedCategory === 'all' 
     ? imageTools 
     : imageTools.filter(tool => tool.category === selectedCategory);
 
-  const selectedToolData = imageTools.find(tool => tool.id === selectedTool);
-
-  if (selectedTool && selectedToolData) {
-    const ToolComponent = selectedToolData.component;
-    return (
-      <div className={styles.spacing.section}>
-        <BackButton onClick={() => setSelectedTool(null)}>
-          Back to Image Tools
-        </BackButton>
-        <div className="bg-foreground/[.02] dark:bg-foreground/[.05] rounded-lg p-6">
-          <div className="mb-6">
-            <h2 className={`${styles.text['2xl']} font-bold ${styles.text.heading} mb-2`}>
-              {selectedToolData.icon} {selectedToolData.title}
-            </h2>
-            <p className={styles.text.muted}>{selectedToolData.description}</p>
-          </div>
-          <ToolComponent />
-        </div>
-      </div>
-    );
-  }
+  const handleToolClick = (route: string) => {
+    router.push(route);
+  };
 
   return (
     <div className={styles.spacing.section}>
@@ -98,7 +75,7 @@ export default function ImageToolsGrid() {
             title={tool.title}
             description={tool.description}
             category={categories.find(c => c.id === tool.category)?.name}
-            onClick={() => setSelectedTool(tool.id)}
+            onClick={() => handleToolClick(tool.route)}
           />
         ))}
       </ToolGrid>

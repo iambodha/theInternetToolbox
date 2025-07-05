@@ -1,16 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { FilterButton, BackButton } from '@/components/ui/Button';
+import { useRouter } from 'next/navigation';
+import { FilterButton } from '@/components/ui/Button';
 import { ToolCard, ToolGrid, FilterGrid } from '@/components/ui/Card';
 import { PageTitle } from '@/components/ui/ToolPageLayout';
 import { styles } from '@/lib/styles';
-import VideoSpeedController from './tools/VideoSpeedController';
-import VideoFrameExtractor from './tools/VideoFrameExtractor';
-import VideoTrimmer from './tools/VideoTrimmer';
-import VideoRotator from './tools/VideoRotator';
-import VideoWatermark from './tools/VideoWatermark';
-import VideoCompressor from './tools/VideoCompressor';
 
 interface VideoTool {
   id: string;
@@ -18,21 +13,21 @@ interface VideoTool {
   description: string;
   icon: string;
   category: 'edit' | 'convert' | 'enhance' | 'utility';
-  component: React.ComponentType;
+  route: string;
 }
 
 const videoTools: VideoTool[] = [
   // Edit Tools
-  { id: 'speed-controller', title: 'Video Speed Controller', description: 'Change video playback speed - create slow motion or time-lapse effects', icon: '⏱️', category: 'edit', component: VideoSpeedController },
-  { id: 'trimmer', title: 'Video Trimmer', description: 'Cut and trim video segments to exact timestamps', icon: '✂️', category: 'edit', component: VideoTrimmer },
-  { id: 'rotator', title: 'Video Rotator', description: 'Rotate videos by 90°, 180°, or 270° to correct orientation', icon: '🔄', category: 'edit', component: VideoRotator },
+  { id: 'speed-controller', title: 'Video Speed Controller', description: 'Change video playback speed - create slow motion or time-lapse effects', icon: '⏱️', category: 'edit', route: '/video-tools/speed-controller' },
+  { id: 'trimmer', title: 'Video Trimmer', description: 'Cut and trim video segments to exact timestamps', icon: '✂️', category: 'edit', route: '/video-tools/trimmer' },
+  { id: 'rotator', title: 'Video Rotator', description: 'Rotate videos by 90°, 180°, or 270° to correct orientation', icon: '🔄', category: 'edit', route: '/video-tools/rotator' },
   
   // Convert Tools
-  { id: 'frame-extractor', title: 'Frame Extractor', description: 'Extract individual frames or thumbnails from videos as images', icon: '🖼️', category: 'convert', component: VideoFrameExtractor },
+  { id: 'frame-extractor', title: 'Frame Extractor', description: 'Extract individual frames or thumbnails from videos as images', icon: '🖼️', category: 'convert', route: '/video-tools/frame-extractor' },
   
   // Enhance Tools
-  { id: 'watermark', title: 'Video Watermark', description: 'Add text or image watermarks to protect your videos', icon: '💧', category: 'enhance', component: VideoWatermark },
-  { id: 'compressor', title: 'Video Compressor', description: 'Reduce video file sizes while maintaining quality', icon: '🗜️', category: 'enhance', component: VideoCompressor },
+  { id: 'watermark', title: 'Video Watermark', description: 'Add text or image watermarks to protect your videos', icon: '💧', category: 'enhance', route: '/video-tools/watermark' },
+  { id: 'compressor', title: 'Video Compressor', description: 'Reduce video file sizes while maintaining quality', icon: '🗜️', category: 'enhance', route: '/video-tools/compressor' },
 ];
 
 const categories = [
@@ -43,34 +38,16 @@ const categories = [
 ];
 
 export default function VideoToolsGrid() {
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedTool, setSelectedTool] = useState<string | null>(null);
 
   const filteredTools = selectedCategory === 'all' 
     ? videoTools 
     : videoTools.filter(tool => tool.category === selectedCategory);
 
-  const selectedToolData = videoTools.find(tool => tool.id === selectedTool);
-
-  if (selectedTool && selectedToolData) {
-    const ToolComponent = selectedToolData.component;
-    return (
-      <div className={styles.spacing.section}>
-        <BackButton onClick={() => setSelectedTool(null)}>
-          Back to Video Tools
-        </BackButton>
-
-        <PageTitle
-          icon={selectedToolData.icon}
-          title={selectedToolData.title}
-          description={selectedToolData.description}
-          variant="tool"
-        />
-
-        <ToolComponent />
-      </div>
-    );
-  }
+  const handleToolClick = (route: string) => {
+    router.push(route);
+  };
 
   return (
     <div className={styles.spacing.section}>
@@ -103,7 +80,7 @@ export default function VideoToolsGrid() {
             title={tool.title}
             description={tool.description}
             category={tool.category.replace('_', ' ')}
-            onClick={() => setSelectedTool(tool.id)}
+            onClick={() => handleToolClick(tool.route)}
           />
         ))}
       </ToolGrid>
