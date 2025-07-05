@@ -5,11 +5,11 @@ import { styles } from '@/lib/styles';
 import ReactionTime from './tools/ReactionTime';
 import NumberMemory from './tools/NumberMemory';
 import TypingSpeed from './tools/TypingSpeed';
-import SequenceMemory from './tools/VisualAcuity';
 import VisualAcuity from './tools/VisualAcuity';
 import VerbalMemory from './tools/VerbalMemory';
 import AimTrainer from './tools/AimTrainer';
 import SpellBee from './tools/SpellBee';
+import ColorStrength from './tools/ColorStrength';
 
 interface BenchmarkTool {
   id: string;
@@ -27,7 +27,6 @@ const benchmarkTools: BenchmarkTool[] = [
   
   // Memory Tests
   { id: 'number-memory', title: 'Number Memory', description: 'How many digits can you remember in sequence?', icon: '🧠', category: 'memory', component: NumberMemory },
-  { id: 'sequence-memory', title: 'Sequence Memory', description: 'Remember and repeat visual sequences that get longer', icon: '🔢', category: 'memory', component: SequenceMemory },
   { id: 'verbal-memory', title: 'Verbal Memory', description: 'Remember words and identify if you\'ve seen them before', icon: '📝', category: 'memory', component: VerbalMemory },
   
   // Typing Tests
@@ -35,6 +34,7 @@ const benchmarkTools: BenchmarkTool[] = [
   
   // Visual Tests
   { id: 'visual-acuity', title: 'Visual Acuity', description: 'Test how well you can see small details and symbols', icon: '👁️', category: 'visual', component: VisualAcuity },
+  { id: 'color-strength', title: 'Color Strength', description: 'Test your color discrimination by finding the odd color out', icon: '🎨', category: 'visual', component: ColorStrength },
   
   // Language Tests
   { id: 'spell-bee', title: 'Spell Bee', description: 'Listen to words and spell them correctly using text-to-speech', icon: '🐝', category: 'language', component: SpellBee },
