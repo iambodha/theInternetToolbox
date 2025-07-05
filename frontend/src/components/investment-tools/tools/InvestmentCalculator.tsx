@@ -33,8 +33,6 @@ export default function InvestmentCalculator() {
     compoundFrequency: 'annually'
   });
 
-  const [calculationMode, setCalculationMode] = useState<'end-amount' | 'contribution' | 'return-rate' | 'time'>('end-amount');
-
   // Get compound frequency multiplier
   const getCompoundFrequency = (frequency: string): number => {
     switch (frequency) {
@@ -52,14 +50,13 @@ export default function InvestmentCalculator() {
     const { initialAmount, monthlyContribution, annualReturnRate, investmentLength, contributionTiming, compoundFrequency } = inputs;
     
     const monthlyRate = annualReturnRate / 100 / 12;
-    const totalMonths = investmentLength * 12;
     const annualContribution = monthlyContribution * 12;
     const compoundingPerYear = getCompoundFrequency(compoundFrequency);
     const effectiveRate = annualReturnRate / 100 / compoundingPerYear;
     
-    let yearlyBreakdown: YearlyBreakdown[] = [];
+    const yearlyBreakdown: YearlyBreakdown[] = [];
     let currentBalance = initialAmount;
-    let totalContributions = annualContribution * investmentLength;
+    const totalContributions = annualContribution * investmentLength;
     
     // Calculate year by year
     for (let year = 1; year <= investmentLength; year++) {
@@ -253,7 +250,7 @@ export default function InvestmentCalculator() {
             </label>
             <select
               value={inputs.compoundFrequency}
-              onChange={(e) => setInputs(prev => ({ ...prev, compoundFrequency: e.target.value as any }))}
+              onChange={(e) => setInputs(prev => ({ ...prev, compoundFrequency: e.target.value as InvestmentInputs['compoundFrequency'] }))}
               className={`w-full p-3 border rounded-lg ${
                 isDark 
                   ? 'bg-gray-700 border-gray-600 text-white' 
@@ -435,7 +432,7 @@ export default function InvestmentCalculator() {
         }`}>
           <p>• <strong>Start early:</strong> Time is your greatest ally in building wealth through compound interest.</p>
           <p>• <strong>Be consistent:</strong> Regular contributions, even small ones, can lead to significant growth over time.</p>
-          <p>• <strong>Diversify:</strong> Don't put all your eggs in one basket - spread risk across different investments.</p>
+          <p>• <strong>Diversify:</strong> Don&apos;t put all your eggs in one basket - spread risk across different investments.</p>
           <p>• <strong>Consider inflation:</strong> Aim for returns that beat inflation to maintain purchasing power.</p>
           <p>• <strong>Review regularly:</strong> Reassess your strategy periodically and adjust as needed.</p>
         </div>
