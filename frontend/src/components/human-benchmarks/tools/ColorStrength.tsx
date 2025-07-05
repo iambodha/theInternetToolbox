@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { styles } from '@/lib/styles';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -277,7 +277,7 @@ export default function ColorStrength() {
                 isDark ? 'text-gray-300' : 'text-gray-600'
               }`}>
                 Find the odd color out! Test your color discrimination by identifying 
-                the one square that's slightly different from the others.
+                the one square that&apos;s slightly different from the others.
               </p>
               <div className={`text-sm mb-6 ${
                 isDark ? 'text-gray-400' : 'text-gray-500'
@@ -584,7 +584,7 @@ export default function ColorStrength() {
             </div>
             <div className="flex justify-between">
               <span className={isDark ? 'text-orange-400' : 'text-orange-600'}>Below Average:</span>
-              <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>2-4 levels</span>
+              <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>2&#8211;4 levels</span>
             </div>
             <div className="flex justify-between">
               <span className={isDark ? 'text-red-400' : 'text-red-600'}>Poor:</span>

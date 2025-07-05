@@ -14,7 +14,7 @@ export default function VerbalMemoryPage() {
             </h1>
           </div>
           <p className="text-lg text-foreground/70 max-w-2xl mx-auto">
-            Remember words and identify if you've seen them before in this test. Challenge your verbal memory!
+            Remember words and identify if you&apos;ve seen them before in this test. Challenge your verbal memory!
           </p>
         </div>
         <VerbalMemory />
