@@ -95,9 +95,6 @@ export default function Home() {
     { name: 'Investment Calculator', description: 'Calculate compound returns and investment growth over time', category: 'Investment Tools', route: '/investment-tools/calculator', icon: '📈' },
     { name: 'Retirement Calculator', description: 'Plan for retirement with contribution and withdrawal calculations', category: 'Investment Tools', route: '/investment-tools/retirement', icon: '🏖️' },
     { name: 'ROI Calculator', description: 'Calculate return on investment and compare options', category: 'Investment Tools', route: '/investment-tools/roi', icon: '💰' },
-    { name: 'Portfolio Analyzer', description: 'Analyze portfolio performance and risk metrics', category: 'Investment Tools', route: '/investment-tools/portfolio', icon: '📊' },
-    { name: 'Compound Interest Calculator', description: 'Calculate the power of compound interest over time', category: 'Investment Tools', route: '/investment-tools/compound', icon: '⚡' },
-    { name: 'Investment Goal Planner', description: 'Plan and track progress towards financial goals', category: 'Investment Tools', route: '/investment-tools/goals', icon: '🎯' },
     
     // File Corruption Tools
     { name: 'File Corruptor', description: 'Create corrupted files with custom sizes', category: 'File Corruption', route: '/file-corruptor', icon: '🔧' },
