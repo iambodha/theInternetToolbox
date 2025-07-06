@@ -96,7 +96,7 @@ export default function ROICalculator() {
     }
   };
 
-  const updateInvestment = (id: string, field: keyof ROIInput, value: any) => {
+  const updateInvestment = (id: string, field: keyof ROIInput, value: string | number) => {
     setInvestments(prev => prev.map(inv => 
       inv.id === id ? { ...inv, [field]: value } : inv
     ));
@@ -160,7 +160,7 @@ export default function ROICalculator() {
 
         {/* Investment Inputs */}
         <div className="space-y-6">
-          {investments.map((investment, index) => (
+          {investments.map((investment) => (
             <div key={investment.id} className={`p-4 rounded-lg border ${
               isDark ? 'bg-gray-700/50 border-gray-600' : 'bg-gray-50 border-gray-200'
             }`}>
@@ -287,7 +287,7 @@ export default function ROICalculator() {
 
       {/* Results */}
       <div className="space-y-6">
-        {results.map(({ investment, result }, index) => (
+        {results.map(({ investment, result }) => (
           <div key={investment.id} className={`p-6 rounded-lg border ${
             isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
           } ${bestInvestment && bestInvestment.investment.id === investment.id ? 
