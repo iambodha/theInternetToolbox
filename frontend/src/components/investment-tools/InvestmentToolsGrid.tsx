@@ -20,11 +20,15 @@ const investmentTools: InvestmentTool[] = [
   { id: 'investment-calculator', title: 'Investment Calculator', description: 'Calculate compound returns, future value, and investment growth over time', icon: '📈', category: 'calculator', route: '/investment-tools/calculator' },
   { id: 'retirement-calculator', title: 'Retirement Calculator', description: 'Plan for retirement with contribution and withdrawal calculations', icon: '🏖️', category: 'calculator', route: '/investment-tools/retirement' },
   { id: 'roi-calculator', title: 'ROI Calculator', description: 'Calculate return on investment and compare investment options', icon: '💰', category: 'calculator', route: '/investment-tools/roi' },
+  
+  // Planner Tools
+  { id: 'portfolio-manager', title: 'Portfolio Manager', description: 'Manage portfolio allocation and rebalancing with desired target weights', icon: '📊', category: 'planner', route: '/investment-tools/portfolio' },
 ];
 
 const categories = [
   { id: 'all', name: 'All Tools', count: investmentTools.length },
   { id: 'calculator', name: 'Calculators', count: investmentTools.filter(t => t.category === 'calculator').length },
+  { id: 'planner', name: 'Planners', count: investmentTools.filter(t => t.category === 'planner').length },
 ];
 
 export default function InvestmentToolsGrid() {
