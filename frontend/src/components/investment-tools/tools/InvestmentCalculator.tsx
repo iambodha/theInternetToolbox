@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 interface InvestmentInputs {
   initialAmount: number;
@@ -10,6 +11,10 @@ interface InvestmentInputs {
   investmentLength: number;
   contributionTiming: 'beginning' | 'end';
   compoundFrequency: 'annually' | 'semiannually' | 'quarterly' | 'monthly' | 'daily';
+  adjustForInflation: boolean;
+  inflationRate: number;
+  contributionGrowth: boolean;
+  contributionGrowthRate: number;
 }
 
 interface YearlyBreakdown {
@@ -30,7 +35,20 @@ export default function InvestmentCalculator() {
     annualReturnRate: 6,
     investmentLength: 10,
     contributionTiming: 'end',
-    compoundFrequency: 'annually'
+    compoundFrequency: 'annually',
+    adjustForInflation: false,
+    inflationRate: 3,
+    contributionGrowth: false,
+    contributionGrowthRate: 3
+  });
+
+  const [inputStrings, setInputStrings] = useState({
+    initialAmount: '20000',
+    monthlyContribution: '1000',
+    annualReturnRate: '6',
+    investmentLength: '10',
+    inflationRate: '3',
+    contributionGrowthRate: '3'
   });
 
   // Get compound frequency multiplier
@@ -47,27 +65,28 @@ export default function InvestmentCalculator() {
 
   // Calculate investment results
   const results = useMemo(() => {
-    const { initialAmount, monthlyContribution, annualReturnRate, investmentLength, contributionTiming, compoundFrequency } = inputs;
+    const { initialAmount, monthlyContribution, annualReturnRate, investmentLength, contributionTiming, compoundFrequency, adjustForInflation, inflationRate, contributionGrowth, contributionGrowthRate } = inputs;
     
     const monthlyRate = annualReturnRate / 100 / 12;
-    const annualContribution = monthlyContribution * 12;
     const compoundingPerYear = getCompoundFrequency(compoundFrequency);
     const effectiveRate = annualReturnRate / 100 / compoundingPerYear;
     
     const yearlyBreakdown: YearlyBreakdown[] = [];
     let currentBalance = initialAmount;
-    const totalContributions = annualContribution * investmentLength;
+    let currentMonthlyContribution = monthlyContribution;
+    let totalContributionsActual = 0;
     
     // Calculate year by year
     for (let year = 1; year <= investmentLength; year++) {
       const startingBalance = currentBalance;
+      const currentAnnualContribution = currentMonthlyContribution * 12;
       let yearContributions = 0;
       let yearInterest = 0;
       
       if (contributionTiming === 'beginning') {
         // Add contribution at beginning of year
-        currentBalance += annualContribution;
-        yearContributions = annualContribution;
+        currentBalance += currentAnnualContribution;
+        yearContributions = currentAnnualContribution;
         
         // Compound for the year
         const periodsInYear = compoundingPerYear;
@@ -80,8 +99,8 @@ export default function InvestmentCalculator() {
         // Add contributions monthly throughout the year and compound
         for (let month = 0; month < 12; month++) {
           // Add monthly contribution
-          currentBalance += monthlyContribution;
-          yearContributions += monthlyContribution;
+          currentBalance += currentMonthlyContribution;
+          yearContributions += currentMonthlyContribution;
           
           // Apply monthly interest (simplified to monthly compounding for contributions)
           const monthlyInterest = currentBalance * monthlyRate;
@@ -90,6 +109,8 @@ export default function InvestmentCalculator() {
         }
       }
       
+      totalContributionsActual += yearContributions;
+      
       yearlyBreakdown.push({
         year,
         startingBalance,
@@ -97,18 +118,38 @@ export default function InvestmentCalculator() {
         interest: yearInterest,
         endingBalance: currentBalance
       });
+      
+      // Adjust contributions for growth if enabled (for next year)
+      if (contributionGrowth) {
+        currentMonthlyContribution *= (1 + contributionGrowthRate / 100);
+      }
     }
     
     const endBalance = currentBalance;
-    const totalInterest = endBalance - initialAmount - totalContributions;
+    const totalInterest = endBalance - initialAmount - totalContributionsActual;
     
-    return {
+    // Apply inflation adjustment if enabled
+    const inflationAdjustedResults = adjustForInflation ? {
+      endBalance: endBalance / Math.pow(1 + inflationRate / 100, investmentLength),
+      totalContributions: totalContributionsActual / Math.pow(1 + inflationRate / 100, investmentLength / 2), // Average adjustment
+      totalInterest: totalInterest / Math.pow(1 + inflationRate / 100, investmentLength),
+      initialAmount: initialAmount, // Initial amount is in today's dollars
+      yearlyBreakdown: yearlyBreakdown.map(year => ({
+        ...year,
+        startingBalance: year.startingBalance / Math.pow(1 + inflationRate / 100, year.year - 1),
+        contributions: year.contributions / Math.pow(1 + inflationRate / 100, year.year - 1),
+        interest: year.interest / Math.pow(1 + inflationRate / 100, year.year - 1),
+        endingBalance: year.endingBalance / Math.pow(1 + inflationRate / 100, year.year)
+      }))
+    } : {
       endBalance,
-      totalContributions,
+      totalContributions: totalContributionsActual,
       totalInterest,
-      yearlyBreakdown,
-      initialAmount
+      initialAmount,
+      yearlyBreakdown
     };
+    
+    return inflationAdjustedResults;
   }, [inputs]);
 
   const formatCurrency = (amount: number): string => {
@@ -144,8 +185,12 @@ export default function InvestmentCalculator() {
             </label>
             <input
               type="number"
-              value={inputs.initialAmount}
-              onChange={(e) => setInputs(prev => ({ ...prev, initialAmount: parseFloat(e.target.value) || 0 }))}
+              value={inputStrings.initialAmount}
+              onChange={(e) => {
+                const value = e.target.value.replace(',', '.');
+                setInputStrings(prev => ({ ...prev, initialAmount: e.target.value }));
+                setInputs(prev => ({ ...prev, initialAmount: value === '' ? 0 : parseFloat(value) || 0 }));
+              }}
               className={`w-full p-3 border rounded-lg ${
                 isDark 
                   ? 'bg-gray-700 border-gray-600 text-white' 
@@ -165,8 +210,12 @@ export default function InvestmentCalculator() {
             </label>
             <input
               type="number"
-              value={inputs.monthlyContribution}
-              onChange={(e) => setInputs(prev => ({ ...prev, monthlyContribution: parseFloat(e.target.value) || 0 }))}
+              value={inputStrings.monthlyContribution}
+              onChange={(e) => {
+                const value = e.target.value.replace(',', '.');
+                setInputStrings(prev => ({ ...prev, monthlyContribution: e.target.value }));
+                setInputs(prev => ({ ...prev, monthlyContribution: value === '' ? 0 : parseFloat(value) || 0 }));
+              }}
               className={`w-full p-3 border rounded-lg ${
                 isDark 
                   ? 'bg-gray-700 border-gray-600 text-white' 
@@ -186,8 +235,12 @@ export default function InvestmentCalculator() {
             </label>
             <input
               type="number"
-              value={inputs.annualReturnRate}
-              onChange={(e) => setInputs(prev => ({ ...prev, annualReturnRate: parseFloat(e.target.value) || 0 }))}
+              value={inputStrings.annualReturnRate}
+              onChange={(e) => {
+                const value = e.target.value.replace(',', '.');
+                setInputStrings(prev => ({ ...prev, annualReturnRate: e.target.value }));
+                setInputs(prev => ({ ...prev, annualReturnRate: value === '' ? 0 : parseFloat(value) || 0 }));
+              }}
               className={`w-full p-3 border rounded-lg ${
                 isDark 
                   ? 'bg-gray-700 border-gray-600 text-white' 
@@ -196,6 +249,7 @@ export default function InvestmentCalculator() {
               min="0"
               max="50"
               step="0.1"
+              lang="en-US"
             />
           </div>
 
@@ -208,8 +262,11 @@ export default function InvestmentCalculator() {
             </label>
             <input
               type="number"
-              value={inputs.investmentLength}
-              onChange={(e) => setInputs(prev => ({ ...prev, investmentLength: parseInt(e.target.value) || 1 }))}
+              value={inputStrings.investmentLength}
+              onChange={(e) => {
+                setInputStrings(prev => ({ ...prev, investmentLength: e.target.value }));
+                setInputs(prev => ({ ...prev, investmentLength: e.target.value === '' ? 1 : parseInt(e.target.value) || 1 }));
+              }}
               className={`w-full p-3 border rounded-lg ${
                 isDark 
                   ? 'bg-gray-700 border-gray-600 text-white' 
@@ -263,6 +320,106 @@ export default function InvestmentCalculator() {
               <option value="monthly">Monthly</option>
               <option value="daily">Daily</option>
             </select>
+          </div>
+
+          {/* Adjust for Inflation */}
+          <div className="md:col-span-2">
+            <div className="flex items-center mb-4">
+              <input
+                type="checkbox"
+                checked={inputs.adjustForInflation}
+                onChange={(e) => setInputs(prev => ({ ...prev, adjustForInflation: e.target.checked }))}
+                className={`w-5 h-5 rounded-full ${
+                  isDark ? 'bg-blue-600 border-transparent' : 'bg-blue-50 border-blue-300'
+                }`}
+              />
+              <label className={`ml-3 text-sm font-medium ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                Adjust for Inflation
+              </label>
+            </div>
+
+            {inputs.adjustForInflation && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Inflation Rate */}
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDark ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Inflation Rate (%)
+                  </label>
+                  <input
+                    type="number"
+                    value={inputStrings.inflationRate}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(',', '.');
+                      setInputStrings(prev => ({ ...prev, inflationRate: e.target.value }));
+                      setInputs(prev => ({ ...prev, inflationRate: value === '' ? 0 : parseFloat(value) || 0 }));
+                    }}
+                    className={`w-full p-3 border rounded-lg ${
+                      isDark 
+                        ? 'bg-gray-700 border-gray-600 text-white' 
+                        : 'bg-white border-gray-300 text-gray-900'
+                    }`}
+                    min="0"
+                    max="50"
+                    step="0.1"
+                    lang="en-US"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Contribution Growth */}
+          <div className="md:col-span-2">
+            <div className="flex items-center mb-4">
+              <input
+                type="checkbox"
+                checked={inputs.contributionGrowth}
+                onChange={(e) => setInputs(prev => ({ ...prev, contributionGrowth: e.target.checked }))}
+                className={`w-5 h-5 rounded-full ${
+                  isDark ? 'bg-blue-600 border-transparent' : 'bg-blue-50 border-blue-300'
+                }`}
+              />
+              <label className={`ml-3 text-sm font-medium ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                Enable Contribution Growth
+              </label>
+            </div>
+
+            {inputs.contributionGrowth && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Contribution Growth Rate */}
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDark ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Contribution Growth Rate (%)
+                  </label>
+                  <input
+                    type="number"
+                    value={inputStrings.contributionGrowthRate}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(',', '.');
+                      setInputStrings(prev => ({ ...prev, contributionGrowthRate: e.target.value }));
+                      setInputs(prev => ({ ...prev, contributionGrowthRate: value === '' ? 0 : parseFloat(value) || 0 }));
+                    }}
+                    className={`w-full p-3 border rounded-lg ${
+                      isDark 
+                        ? 'bg-gray-700 border-gray-600 text-white' 
+                        : 'bg-white border-gray-300 text-gray-900'
+                    }`}
+                    min="0"
+                    max="50"
+                    step="0.1"
+                    lang="en-US"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -336,28 +493,37 @@ export default function InvestmentCalculator() {
           }`}>Balance Composition</h3>
           <div className="flex rounded-lg overflow-hidden h-8">
             <div 
-              className="bg-blue-500 flex items-center justify-center text-white text-sm font-medium"
+              className="bg-blue-500"
               style={{ width: formatPercentage(results.initialAmount) }}
-            >
-              {formatPercentage(results.initialAmount)}
-            </div>
+            />
             <div 
-              className="bg-purple-500 flex items-center justify-center text-white text-sm font-medium"
+              className="bg-purple-500"
               style={{ width: formatPercentage(results.totalContributions) }}
-            >
-              {formatPercentage(results.totalContributions)}
-            </div>
+            />
             <div 
-              className="bg-orange-500 flex items-center justify-center text-white text-sm font-medium"
+              className="bg-orange-500"
               style={{ width: formatPercentage(results.totalInterest) }}
-            >
-              {formatPercentage(results.totalInterest)}
-            </div>
+            />
           </div>
-          <div className="flex justify-between text-sm mt-2">
-            <span className={isDark ? 'text-blue-400' : 'text-blue-600'}>Starting Amount</span>
-            <span className={isDark ? 'text-purple-400' : 'text-purple-600'}>Contributions</span>
-            <span className={isDark ? 'text-orange-400' : 'text-orange-600'}>Interest</span>
+          <div className="flex flex-wrap gap-4 mt-4">
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-blue-500 rounded mr-2"></div>
+              <span className={`text-sm ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                Starting Amount ({formatPercentage(results.initialAmount)})
+              </span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-purple-500 rounded mr-2"></div>
+              <span className={`text-sm ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>
+                Total Contributions ({formatPercentage(results.totalContributions)})
+              </span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-orange-500 rounded mr-2"></div>
+              <span className={`text-sm ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>
+                Total Interest ({formatPercentage(results.totalInterest)})
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -418,6 +584,87 @@ export default function InvestmentCalculator() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Investment Growth Chart */}
+      <div className={`p-6 rounded-lg border ${
+        isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+      }`}>
+        <h2 className={`text-xl font-semibold mb-6 ${
+          isDark ? 'text-white' : 'text-gray-900'
+        }`}>Investment Growth Breakdown by Year</h2>
+
+        <ResponsiveContainer width="100%" height={400}>
+          <BarChart 
+            data={results.yearlyBreakdown.map(year => {
+              // Calculate cumulative contributions up to this year
+              const cumulativeContributions = results.yearlyBreakdown
+                .slice(0, year.year)
+                .reduce((sum, y) => sum + y.contributions, 0);
+              
+              // Calculate cumulative interest up to this year
+              const cumulativeInterest = results.yearlyBreakdown
+                .slice(0, year.year)
+                .reduce((sum, y) => sum + y.interest, 0);
+              
+              return {
+                year: year.year,
+                'Starting Amount': results.initialAmount,
+                'Total Contributions': cumulativeContributions,
+                'Total Interest': cumulativeInterest
+              };
+            })}
+            style={{ cursor: 'default' }}
+          >
+            <CartesianGrid strokeDasharray="3 3" className={isDark ? 'stroke-gray-700' : 'stroke-gray-200'} />
+            <XAxis 
+              dataKey="year" 
+              className={isDark ? 'text-gray-300' : 'text-gray-700'}
+              tick={{ fill: isDark ? '#d1d5db' : '#374151' }}
+            />
+            <YAxis 
+              className={isDark ? 'text-gray-300' : 'text-gray-700'}
+              tick={{ fill: isDark ? '#d1d5db' : '#374151' }}
+              tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+            />
+            <Tooltip 
+              contentStyle={{ 
+                backgroundColor: isDark ? '#374151' : '#ffffff',
+                border: isDark ? '1px solid #4b5563' : '1px solid #e5e7eb',
+                borderRadius: '8px',
+                color: isDark ? '#ffffff' : '#000000'
+              }}
+              formatter={(value: number) => [formatCurrency(value), '']}
+              labelFormatter={(label) => `Year ${label}`}
+              cursor={false}
+            />
+            <Legend 
+              wrapperStyle={{ paddingTop: 20 }}
+              iconType="rect"
+            />
+            <Bar 
+              dataKey="Starting Amount" 
+              stackId="a" 
+              fill="#3b82f6"
+              name="Starting Amount"
+              radius={[0, 0, 0, 0]}
+            />
+            <Bar 
+              dataKey="Total Contributions" 
+              stackId="a" 
+              fill="#8b5cf6"
+              name="Total Contributions"
+              radius={[0, 0, 0, 0]}
+            />
+            <Bar 
+              dataKey="Total Interest" 
+              stackId="a" 
+              fill="#f59e0b"
+              name="Total Interest"
+              radius={[4, 4, 0, 0]}
+            />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
 
       {/* Investment Tips */}
