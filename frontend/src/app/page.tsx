@@ -95,9 +95,21 @@ export default function Home() {
     { name: 'Investment Calculator', description: 'Calculate compound returns and investment growth over time', category: 'Investment Tools', route: '/investment-tools/calculator', icon: '📈' },
     { name: 'Retirement Calculator', description: 'Plan for retirement with contribution and withdrawal calculations', category: 'Investment Tools', route: '/investment-tools/retirement', icon: '🏖️' },
     { name: 'ROI Calculator', description: 'Calculate return on investment and compare options', category: 'Investment Tools', route: '/investment-tools/roi', icon: '💰' },
+    { name: 'Portfolio Manager', description: 'Manage portfolio allocation and rebalancing with desired target weights', category: 'Investment Tools', route: '/investment-tools/portfolio', icon: '📊' },
     
     // File Corruption Tools
     { name: 'File Corruptor', description: 'Create corrupted files with custom sizes', category: 'File Corruption', route: '/file-corruptor', icon: '🔧' },
+
+    // Chemistry Tools
+    { name: 'Molarity Calculator', description: 'Calculate molarity, moles, volume, and molecular weight relationships', category: 'Chemistry Tools', route: '/chemistry-tools/molarity-calculator', icon: '🧪' },
+    { name: 'pH Calculator', description: 'Calculate pH, pOH, and hydrogen ion concentrations', category: 'Chemistry Tools', route: '/chemistry-tools/ph-calculator', icon: '🔬' },
+    { name: 'Dilution Calculator', description: 'Calculate concentrations and volumes for solution dilutions', category: 'Chemistry Tools', route: '/chemistry-tools/dilution-calculator', icon: '💧' },
+    { name: 'Gas Laws Calculator', description: 'Apply ideal gas law, Boyle\'s, Charles\', and Gay-Lussac\'s laws', category: 'Chemistry Tools', route: '/chemistry-tools/gas-laws-calculator', icon: '🎈' },
+    { name: 'Stoichiometry Calculator', description: 'Balance equations and calculate reaction stoichiometry', category: 'Chemistry Tools', route: '/chemistry-tools/stoichiometry-calculator', icon: '⚖️' },
+    { name: 'Buffer Calculator', description: 'Calculate buffer pH using Henderson-Hasselbalch equation', category: 'Chemistry Tools', route: '/chemistry-tools/buffer-calculator', icon: '⚗️' },
+    { name: 'Unit Converter', description: 'Convert between common chemistry units (mass, volume, pressure, etc.)', category: 'Chemistry Tools', route: '/chemistry-tools/unit-converter', icon: '🔄' },
+    { name: 'Temperature Converter', description: 'Convert between Celsius, Fahrenheit, and Kelvin scales', category: 'Chemistry Tools', route: '/chemistry-tools/temperature-converter', icon: '🌡️' },
+    { name: 'Molecular Weight Calculator', description: 'Calculate molecular weight from chemical formulas', category: 'Chemistry Tools', route: '/chemistry-tools/molecular-weight-calculator', icon: '⚛️' },
   ];
 
   // Filter tools based on search query
@@ -258,6 +270,23 @@ export default function Home() {
         "Investment Goal Planner",
       ],
       href: "/investment-tools",
+    },
+    {
+      title: "Chemistry Tools",
+      description: "Calculate, analyze, and explore chemical properties and reactions",
+      icon: "🧪",
+      tools: [
+        "Molarity Calculator",
+        "pH Calculator",
+        "Dilution Calculator",
+        "Gas Laws Calculator",
+        "Stoichiometry Calculator",
+        "Buffer Calculator",
+        "Unit Converter",
+        "Temperature Converter",
+        "Molecular Weight Calculator",
+      ],
+      href: "/chemistry-tools",
     },
   ];
 
