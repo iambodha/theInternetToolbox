@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
 
 interface BufferInputs {
   acidConcentration?: number;
@@ -15,9 +14,6 @@ interface BufferInputs {
 }
 
 export default function BufferCalculator() {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
-
   const [inputs, setInputs] = useState<BufferInputs>({});
   const [calculationMode, setCalculationMode] = useState<'pH' | 'ratio' | 'prepare'>('pH');
   const [results, setResults] = useState<BufferInputs>({});
@@ -51,7 +47,7 @@ export default function BufferCalculator() {
 
   const performCalculation = () => {
     const { acidConcentration, conjugateBaseConcentration, pKa, desiredpH, totalVolume } = inputs;
-    let newResults: BufferInputs = { ...inputs };
+    const newResults: BufferInputs = { ...inputs };
 
     switch (calculationMode) {
       case 'pH':

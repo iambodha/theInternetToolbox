@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
 
 interface ConcentrationUnit {
   id: string;
@@ -26,9 +25,6 @@ const concentrationUnits: ConcentrationUnit[] = [
 ];
 
 export default function ConcentrationConverter() {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
-
   const [fromUnit, setFromUnit] = useState('molarity');
   const [toUnit, setToUnit] = useState('mass_volume_percent');
   const [inputValue, setInputValue] = useState('');
@@ -161,7 +157,7 @@ export default function ConcentrationConverter() {
       }
 
       setResult(convertedValue);
-    } catch (err) {
+    } catch {
       setError('Error in conversion calculation. Please check your inputs.');
     }
   };

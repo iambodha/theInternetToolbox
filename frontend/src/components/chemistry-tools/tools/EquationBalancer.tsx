@@ -17,7 +17,6 @@ interface BalancedEquation {
 
 export default function EquationBalancer() {
   const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
 
   const [reactantsInput, setReactantsInput] = useState('H2 + O2');
   const [productsInput, setProductsInput] = useState('H2O');
@@ -98,7 +97,7 @@ export default function EquationBalancer() {
         isBalanced: false,
         error: 'Could not balance equation automatically. Try a simpler equation or check for errors.'
       };
-    } catch (error) {
+    } catch {
       return {
         reactants: reactants.map(formula => ({ formula, coefficient: 1 })),
         products: products.map(formula => ({ formula, coefficient: 1 })),
@@ -285,7 +284,7 @@ export default function EquationBalancer() {
           {balancedEquation.isBalanced ? (
             <div className="space-y-4">
               <div className={`text-2xl font-mono font-bold text-center p-4 rounded-lg ${
-                isDark ? 'bg-green-900/30' : 'bg-green-100'
+                resolvedTheme === 'dark' ? 'bg-green-900/30' : 'bg-green-100'
               }`}>
                 {formatEquation(balancedEquation)}
               </div>

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
 
 interface GasLawInputs {
   pressure1?: number;
@@ -17,9 +16,6 @@ interface GasLawInputs {
 type GasLaw = 'ideal' | 'boyles' | 'charles' | 'gay-lussac' | 'combined';
 
 export default function GasLawsCalculator() {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
-
   const [selectedLaw, setSelectedLaw] = useState<GasLaw>('ideal');
   const [inputs, setInputs] = useState<GasLawInputs>({
     gasConstant: 0.0821 // L·atm/(mol·K)
@@ -34,9 +30,9 @@ export default function GasLawsCalculator() {
 
   const gasLaws = [
     { id: 'ideal', name: 'Ideal Gas Law', formula: 'PV = nRT', description: 'Relates P, V, n, R, T' },
-    { id: 'boyles', name: "Boyle's Law", formula: 'P₁V₁ = P₂V₂', description: 'Temperature constant' },
-    { id: 'charles', name: "Charles' Law", formula: 'V₁/T₁ = V₂/T₂', description: 'Pressure constant' },
-    { id: 'gay-lussac', name: "Gay-Lussac's Law", formula: 'P₁/T₁ = P₂/T₂', description: 'Volume constant' },
+    { id: 'boyles', name: "Boyle&apos;s Law", formula: 'P₁V₁ = P₂V₂', description: 'Temperature constant' },
+    { id: 'charles', name: "Charles&apos; Law", formula: 'V₁/T₁ = V₂/T₂', description: 'Pressure constant' },
+    { id: 'gay-lussac', name: "Gay-Lussac&apos;s Law", formula: 'P₁/T₁ = P₂/T₂', description: 'Volume constant' },
     { id: 'combined', name: 'Combined Gas Law', formula: 'P₁V₁/T₁ = P₂V₂/T₂', description: 'Moles constant' }
   ];
 
@@ -61,7 +57,7 @@ export default function GasLawsCalculator() {
 
   const performCalculation = () => {
     const { pressure1, volume1, temperature1, pressure2, volume2, temperature2, moles, gasConstant } = inputs;
-    let newResults: GasLawInputs = { ...inputs };
+    const newResults: GasLawInputs = { ...inputs };
 
     // Convert temperatures to Kelvin for calculations
     const t1K = temperature1 ? convertTemperature(temperature1, units.temperature, 'K') : undefined;
@@ -607,13 +603,13 @@ export default function GasLawsCalculator() {
             <strong>Ideal Gas Law: PV = nRT</strong>
           </div>
           <div className="font-mono bg-blue-100 dark:bg-blue-900/30 p-2 rounded">
-            <strong>Boyle's Law: P₁V₁ = P₂V₂</strong> (T constant)
+            <strong>Boyle&apos;s Law: P₁V₁ = P₂V₂</strong> (T constant)
           </div>
           <div className="font-mono bg-blue-100 dark:bg-blue-900/30 p-2 rounded">
-            <strong>Charles' Law: V₁/T₁ = V₂/T₂</strong> (P constant)
+            <strong>Charles&apos; Law: V₁/T₁ = V₂/T₂</strong> (P constant)
           </div>
           <div className="font-mono bg-blue-100 dark:bg-blue-900/30 p-2 rounded">
-            <strong>Gay-Lussac's Law: P₁/T₁ = P₂/T₂</strong> (V constant)
+            <strong>Gay-Lussac&apos;s Law: P₁/T₁ = P₂/T₂</strong> (V constant)
           </div>
           <div className="font-mono bg-blue-100 dark:bg-blue-900/30 p-2 rounded">
             <strong>Combined Gas Law: P₁V₁/T₁ = P₂V₂/T₂</strong> (n constant)

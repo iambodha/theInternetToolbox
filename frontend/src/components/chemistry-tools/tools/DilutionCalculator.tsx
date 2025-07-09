@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
 
 interface DilutionInputs {
   c1?: number; // Initial concentration
@@ -11,9 +10,6 @@ interface DilutionInputs {
 }
 
 export default function DilutionCalculator() {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
-
   const [inputs, setInputs] = useState<DilutionInputs>({});
   const [calculationMode, setCalculationMode] = useState<'c1' | 'v1' | 'c2' | 'v2'>('v2');
   const [results, setResults] = useState<DilutionInputs>({});
@@ -27,7 +23,7 @@ export default function DilutionCalculator() {
 
   const performCalculation = () => {
     const { c1, v1, c2, v2 } = inputs;
-    let newResults: DilutionInputs = { ...inputs };
+    const newResults: DilutionInputs = { ...inputs };
 
     // Using C1V1 = C2V2 formula
     switch (calculationMode) {
@@ -100,7 +96,7 @@ export default function DilutionCalculator() {
           ].map((option) => (
             <button
               key={option.mode}
-              onClick={() => setCalculationMode(option.mode as any)}
+              onClick={() => setCalculationMode(option.mode as 'c1' | 'v1' | 'c2' | 'v2')}
               className={`p-3 text-left border rounded-lg transition-colors ${
                 calculationMode === option.mode
                   ? 'border-foreground bg-foreground text-background'

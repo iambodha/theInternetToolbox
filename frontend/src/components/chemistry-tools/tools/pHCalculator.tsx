@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
 
 interface pHCalculation {
   pH?: number;
@@ -11,9 +10,6 @@ interface pHCalculation {
 }
 
 export default function PHCalculator() {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
-
   const [inputs, setInputs] = useState<pHCalculation>({
     pH: undefined,
     pOH: undefined,
@@ -82,32 +78,32 @@ export default function PHCalculator() {
   };
 
   const performCalculation = () => {
-    let newResults: pHCalculation = {};
+    let results: pHCalculation = {};
 
     switch (calculationMode) {
       case 'pH':
         if (inputs.pH !== undefined) {
-          newResults = calculateFrompH(inputs.pH);
+          results = calculateFrompH(inputs.pH);
         }
         break;
       case 'pOH':
         if (inputs.pOH !== undefined) {
-          newResults = calculateFrompOH(inputs.pOH);
+          results = calculateFrompOH(inputs.pOH);
         }
         break;
       case 'hydrogen':
         if (inputs.hydrogenConcentration !== undefined) {
-          newResults = calculateFromHydrogen(inputs.hydrogenConcentration);
+          results = calculateFromHydrogen(inputs.hydrogenConcentration);
         }
         break;
       case 'hydroxide':
         if (inputs.hydroxideConcentration !== undefined) {
-          newResults = calculateFromHydroxide(inputs.hydroxideConcentration);
+          results = calculateFromHydroxide(inputs.hydroxideConcentration);
         }
         break;
     }
 
-    setResults(newResults);
+    setResults(results);
   };
 
   const clearAll = () => {
@@ -154,7 +150,7 @@ export default function PHCalculator() {
           ].map((option) => (
             <button
               key={option.mode}
-              onClick={() => setCalculationMode(option.mode as any)}
+              onClick={() => setCalculationMode(option.mode as 'pH' | 'pOH' | 'hydrogen' | 'hydroxide')}
               className={`p-3 text-left border rounded-lg transition-colors ${
                 calculationMode === option.mode
                   ? 'border-foreground bg-foreground text-background'

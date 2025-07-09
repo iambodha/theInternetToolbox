@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
 
 interface StoichiometryInputs {
   givenMoles?: number;
@@ -14,9 +13,6 @@ interface StoichiometryInputs {
 }
 
 export default function StoichiometryCalculator() {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
-
   const [inputs, setInputs] = useState<StoichiometryInputs>({});
   const [calculationMode, setCalculationMode] = useState<'moles' | 'mass'>('mass');
   const [results, setResults] = useState<StoichiometryInputs>({});
@@ -29,8 +25,9 @@ export default function StoichiometryCalculator() {
   };
 
   const performCalculation = () => {
+    const newResults: StoichiometryInputs = {};
+
     const { givenMoles, givenMass, givenMolarMass, targetMolarMass, moleRatio } = inputs;
-    let newResults: StoichiometryInputs = { ...inputs };
 
     // Calculate given moles if not provided
     let actualGivenMoles = givenMoles;
@@ -370,12 +367,42 @@ export default function StoichiometryCalculator() {
       <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg p-6">
         <h4 className="font-medium text-orange-900 dark:text-orange-100 mb-3">💡 Tips</h4>
         <ul className="space-y-1 text-sm text-orange-700 dark:text-orange-300">
-          <li>• Always start with a balanced chemical equation</li>
-          <li>• Identify what you're given and what you need to find</li>
-          <li>• Use mole ratios from balanced equation coefficients</li>
-          <li>• Convert between mass and moles using molar mass</li>
-          <li>• Check your answer for reasonableness</li>
-          <li>• For limiting reactant problems, calculate for both reactants</li>
+          <li>
+            • Always start with a balanced chemical equation
+          </li>
+          <li>
+            • Identify what you&apos;re given and what you need to find
+          </li>
+          <li>
+            • Use mole ratios from balanced equation coefficients
+          </li>
+          <li>
+            • Convert between mass and moles using molar mass
+          </li>
+          <li>
+            • Check your answer for reasonableness
+          </li>
+          <li>
+            • For limiting reactant problems, calculate for both reactants
+          </li>
+          <li>
+            • Stoichiometry is the calculation of reactants and products in chemical reactions
+          </li>
+          <li>
+            • Based on balanced chemical equations and mole ratios
+          </li>
+          <li>
+            • Essential for determining theoretical yields and limiting reagents
+          </li>
+          <li>
+            • Use molar masses from the periodic table or molecular weight calculator
+          </li>
+          <li>
+            • Remember to balance your chemical equation first
+          </li>
+          <li>
+            • 1 mole = 6.022 × 10²³ particles (Avogadro&apos;s number)
+          </li>
         </ul>
       </div>
     </div>

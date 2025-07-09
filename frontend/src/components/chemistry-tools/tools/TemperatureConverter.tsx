@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
 
 interface TemperatureScale {
   id: string;
@@ -29,9 +28,6 @@ const commonTemperatures = [
 ];
 
 export default function TemperatureConverter() {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
-
   const [fromScale, setFromScale] = useState('celsius');
   const [toScale, setToScale] = useState('fahrenheit');
   const [inputValue, setInputValue] = useState('');
@@ -297,7 +293,7 @@ export default function TemperatureConverter() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-purple-700 dark:text-purple-300">
           <div>
             <strong>Celsius (°C):</strong>
-            <p className="mt-1">Based on water's freezing (0°C) and boiling (100°C) points at standard pressure. Most commonly used in science and daily life worldwide.</p>
+            <p className="mt-1">Based on water&apos;s freezing (0°C) and boiling (100°C) points at standard pressure. Most commonly used in science and daily life worldwide.</p>
           </div>
           <div>
             <strong>Fahrenheit (°F):</strong>
@@ -324,6 +320,14 @@ export default function TemperatureConverter() {
           <li>• Color coding helps visualize temperature ranges: purple (very cold) to red (very hot)</li>
           <li>• Use common temperatures as reference points for quick estimates</li>
           <li>• Temperature differences are the same in Celsius and Kelvin (ΔT in °C = ΔT in K)</li>
+          <li>• Absolute zero is -273.15°C or -459.67°F</li>
+          <li>• Water freezes at 0°C, 32°F, or 273.15K</li>
+          <li>• Water boils at 100°C, 212°F, or 373.15K</li>
+          <li>• Kelvin is the SI base unit (no degree symbol)</li>
+          <li>• Celsius and Fahrenheit use degree symbols</li>
+          <li>• Body temperature is about 37°C or 98.6°F</li>
+          <li>• Room temperature is typically 20-25°C or 68-77°F</li>
+          <li>• Rankine is Fahrenheit&apos;s absolute scale (°R)</li>
         </ul>
       </div>
     </div>

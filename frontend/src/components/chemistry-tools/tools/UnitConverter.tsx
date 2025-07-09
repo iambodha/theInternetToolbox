@@ -3,13 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 
-interface UnitConversion {
-  value: number;
-  fromUnit: string;
-  toUnit: string;
-  category: string;
-}
-
 interface ConversionResult {
   value: number;
   unit: string;
@@ -17,8 +10,7 @@ interface ConversionResult {
 }
 
 export default function UnitConverter() {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
+  const { } = useTheme();
 
   const [selectedCategory, setSelectedCategory] = useState('mass');
   const [inputValue, setInputValue] = useState<string>('');
@@ -153,8 +145,8 @@ export default function UnitConverter() {
     const units = currentCategory.units;
     
     // Use type assertion to safely access unit data
-    const fromFactor = (units as any)[fromUnit]?.factor;
-    const toFactor = (units as any)[toUnit]?.factor;
+    const fromFactor = (units as Record<string, { name: string; factor: number }>)[fromUnit]?.factor;
+    const toFactor = (units as Record<string, { name: string; factor: number }>)[toUnit]?.factor;
     
     if (typeof fromFactor !== 'number' || typeof toFactor !== 'number') return;
     

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
 
 interface ElementInput {
   symbol: string;
@@ -96,9 +95,6 @@ const exampleCompounds = [
 ];
 
 export default function EmpiricalFormulaCalculator() {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
-
   const [inputMode, setInputMode] = useState<'percentage' | 'mass'>('percentage');
   const [elementInputs, setElementInputs] = useState<ElementInput[]>([
     { symbol: 'C', mass: '', percentage: '' },

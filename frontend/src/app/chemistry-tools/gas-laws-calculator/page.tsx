@@ -14,7 +14,7 @@ export default function GasLawsCalculatorPage() {
             </h1>
           </div>
           <p className="text-lg text-foreground/70 max-w-2xl mx-auto">
-            Apply ideal gas law, Boyle's, Charles', Gay-Lussac's, and combined gas laws. Calculate pressure, volume, temperature, and moles relationships.
+            Apply ideal gas law, Boyle&apos;s, Charles&apos;, Gay-Lussac&apos;s, and combined gas laws. Calculate pressure, volume, temperature, and moles relationships.
           </p>
         </div>
         <GasLawsCalculator />

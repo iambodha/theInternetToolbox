@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
 
 interface Element {
   symbol: string;
@@ -126,9 +125,6 @@ const commonCompounds = [
 ];
 
 export default function MolecularWeightCalculator() {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
-
   const [formula, setFormula] = useState('');
   const [result, setResult] = useState<{
     molecularWeight: number;
@@ -138,8 +134,6 @@ export default function MolecularWeightCalculator() {
   const [error, setError] = useState<string | null>(null);
 
   const parseFormula = (formula: string): ParsedElement[] => {
-    const elementMap = new Map<string, number>();
-    
     // Remove spaces and validate basic format
     const cleanFormula = formula.replace(/\s/g, '');
     if (!/^[A-Z][a-z]?(\d+)?(\([A-Z][a-z]?(\d+)?\)\d+|[A-Z][a-z]?(\d+)?)*$/.test(cleanFormula) && cleanFormula !== '') {

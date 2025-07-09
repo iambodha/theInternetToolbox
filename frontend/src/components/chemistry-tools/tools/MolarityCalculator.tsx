@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
 
 interface MolarityCalculation {
   molarity?: number;
@@ -12,9 +11,6 @@ interface MolarityCalculation {
 }
 
 export default function MolarityCalculator() {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
-
   const [inputs, setInputs] = useState<MolarityCalculation>({
     molarity: undefined,
     moles: undefined,
@@ -72,7 +68,7 @@ export default function MolarityCalculator() {
   };
 
   const performCalculation = () => {
-    let newResults: MolarityCalculation = {};
+    const newResults: MolarityCalculation = {};
 
     switch (calculationMode) {
       case 'molarity':
@@ -117,7 +113,7 @@ export default function MolarityCalculator() {
           ].map((option) => (
             <button
               key={option.mode}
-              onClick={() => setCalculationMode(option.mode as any)}
+              onClick={() => setCalculationMode(option.mode as 'molarity' | 'moles' | 'volume' | 'mass')}
               className={`p-3 text-left border rounded-lg transition-colors ${
                 calculationMode === option.mode
                   ? 'border-foreground bg-foreground text-background'
