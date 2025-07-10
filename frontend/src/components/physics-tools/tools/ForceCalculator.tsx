@@ -21,7 +21,7 @@ export default function ForceCalculator() {
     { id: 'newton', name: "Newton's Second Law", description: 'F = ma', icon: '⚡' },
     { id: 'weight', name: 'Weight Force', description: 'W = mg', icon: '🌍' },
     { id: 'friction', name: 'Friction Force', description: 'f = μN', icon: '🔥' },
-  ];
+  ] as const;
 
   const handleInputChange = (field: keyof ForceInputs, value: string) => {
     const numValue = value === '' ? undefined : parseFloat(value);
@@ -30,7 +30,7 @@ export default function ForceCalculator() {
 
   const calculate = () => {
     const { mass, acceleration, force, weight, friction, normal, frictionCoeff } = inputs;
-    let newResults: ForceInputs = { ...inputs };
+    const newResults: ForceInputs = { ...inputs };
 
     try {
       switch (calculationType) {
@@ -92,7 +92,7 @@ export default function ForceCalculator() {
           {calculationTypes.map((type) => (
             <button
               key={type.id}
-              onClick={() => setCalculationType(type.id as any)}
+              onClick={() => setCalculationType(type.id)}
               className={`p-4 text-left border rounded-lg transition-colors ${
                 calculationType === type.id
                   ? 'border-foreground bg-foreground text-background'
@@ -302,7 +302,7 @@ export default function ForceCalculator() {
         <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-3">📝 Force Formulas</h4>
         <div className="space-y-2 text-sm text-blue-700 dark:text-blue-300">
           <div className="font-mono bg-blue-100 dark:bg-blue-900/30 p-2 rounded">
-            <strong>F = ma</strong> - Newton's Second Law (Force = mass × acceleration)
+            <strong>F = ma</strong> - Newton&apos;s Second Law (Force = mass × acceleration)
           </div>
           <div className="font-mono bg-blue-100 dark:bg-blue-900/30 p-2 rounded">
             <strong>W = mg</strong> - Weight force (g = 9.81 m/s²)

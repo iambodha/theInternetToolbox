@@ -14,7 +14,7 @@ export default function ForceCalculatorPage() {
             </h1>
           </div>
           <p className="text-lg text-foreground/70 max-w-2xl mx-auto">
-            Calculate forces using Newton's laws, weight calculations, and friction forces. Essential for mechanics and force analysis.
+            Calculate forces using Newton&apos;s laws, weight calculations, and friction forces. Essential for mechanics and force analysis.
           </p>
         </div>
         <ForceCalculator />

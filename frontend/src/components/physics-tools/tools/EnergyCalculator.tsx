@@ -27,7 +27,7 @@ export default function EnergyCalculator() {
     { id: 'mechanical', name: 'Mechanical Energy', description: 'ME = KE + PE', icon: '⚙️' },
     { id: 'work', name: 'Work', description: 'W = F⋅d', icon: '💪' },
     { id: 'power', name: 'Power', description: 'P = W/t', icon: '⚡' },
-  ];
+  ] as const;
 
   const handleInputChange = (field: keyof EnergyInputs, value: string) => {
     const numValue = value === '' ? undefined : parseFloat(value);
@@ -36,7 +36,7 @@ export default function EnergyCalculator() {
 
   const calculate = () => {
     const { mass, velocity, height, kineticEnergy, potentialEnergy, mechanicalEnergy, work, force, distance, power, time } = inputs;
-    let newResults: EnergyInputs = { ...inputs };
+    const newResults: EnergyInputs = { ...inputs };
     const g = 9.81; // gravitational acceleration
 
     try {
@@ -131,7 +131,7 @@ export default function EnergyCalculator() {
           {calculationTypes.map((type) => (
             <button
               key={type.id}
-              onClick={() => setCalculationType(type.id as any)}
+              onClick={() => setCalculationType(type.id)}
               className={`p-3 text-left border rounded-lg transition-colors ${
                 calculationType === type.id
                   ? 'border-foreground bg-foreground text-background'

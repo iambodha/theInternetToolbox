@@ -22,7 +22,7 @@ export default function WaveCalculator() {
     { id: 'light', name: 'Light Wave', description: 'c = 3×10⁸ m/s (vacuum)', icon: '💡', speed: 299792458 },
     { id: 'water', name: 'Water Wave', description: 'v ≈ 1.5 m/s (typical)', icon: '🌊', speed: 1.5 },
     { id: 'custom', name: 'Custom Wave', description: 'Enter your own speed', icon: '⚙️', speed: null },
-  ];
+  ] as const;
 
   const handleInputChange = (field: keyof WaveInputs, value: string) => {
     const numValue = value === '' ? undefined : parseFloat(value);
@@ -30,8 +30,9 @@ export default function WaveCalculator() {
   };
 
   const calculate = () => {
-    let { frequency, wavelength, waveSpeed, period, amplitude, angularFrequency, waveNumber } = inputs;
-    let newResults: WaveInputs = { ...inputs };
+    const { frequency, wavelength, period, angularFrequency, waveNumber } = inputs;
+    let { waveSpeed } = inputs;
+    const newResults: WaveInputs = { ...inputs };
 
     // Use predefined wave speed if not custom
     if (waveType !== 'custom') {
@@ -128,7 +129,7 @@ export default function WaveCalculator() {
           {waveTypes.map((type) => (
             <button
               key={type.id}
-              onClick={() => setWaveType(type.id as any)}
+              onClick={() => setWaveType(type.id)}
               className={`p-4 text-left border rounded-lg transition-colors ${
                 waveType === type.id
                   ? 'border-foreground bg-foreground text-background'
@@ -178,7 +179,7 @@ export default function WaveCalculator() {
         <div>
           <label className="block text-sm font-medium mb-2">
             Wave Speed (v)
-            {waveType !== 'custom' && <span className="text-blue-500 ml-1">← preset value</span>}
+            {waveType !== 'custom' && <span className="text-blue-500 ml-1">&larr; preset value</span>}
           </label>
           <input
             type="number"
@@ -377,7 +378,7 @@ export default function WaveCalculator() {
             <ul className="mt-1 space-y-1">
               <li>• Human hearing: 20 Hz - 20 kHz</li>
               <li>• Middle C: 261.6 Hz</li>
-              <li>• Ultrasound: > 20 kHz</li>
+              <li>• Ultrasound: &gt; 20 kHz</li>
             </ul>
           </div>
           <div>

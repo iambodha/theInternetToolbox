@@ -20,7 +20,7 @@ export default function KinematicsCalculator() {
     { id: 'd-vi-vf-t', name: 'd = (v₀ + v)t/2', description: 'Displacement from velocities and time' },
     { id: 'd-vi-at', name: 'd = v₀t + ½at²', description: 'Displacement from initial velocity, acceleration, and time' },
     { id:'vf2-vi2-ad', name: 'v² = v₀² + 2ad', description: 'Final velocity squared from initial velocity, acceleration, and displacement' },
-  ];
+  ] as const;
 
   const handleInputChange = (field: keyof KinematicsInputs, value: string) => {
     const numValue = value === '' ? undefined : parseFloat(value);
@@ -29,7 +29,7 @@ export default function KinematicsCalculator() {
 
   const calculate = () => {
     const { initialVelocity: v0, finalVelocity: v, acceleration: a, time: t, displacement: d } = inputs;
-    let newResults: KinematicsInputs = { ...inputs };
+    const newResults: KinematicsInputs = { ...inputs };
 
     try {
       switch (selectedEquation) {
@@ -106,7 +106,7 @@ export default function KinematicsCalculator() {
           {equations.map((eq) => (
             <button
               key={eq.id}
-              onClick={() => setSelectedEquation(eq.id as any)}
+              onClick={() => setSelectedEquation(eq.id)}
               className={`p-4 text-left border rounded-lg transition-colors ${
                 selectedEquation === eq.id
                   ? 'border-foreground bg-foreground text-background'
