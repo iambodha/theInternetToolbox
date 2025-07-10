@@ -110,6 +110,12 @@ export default function Home() {
     { name: 'Unit Converter', description: 'Convert between common chemistry units (mass, volume, pressure, etc.)', category: 'Chemistry Tools', route: '/chemistry-tools/unit-converter', icon: '🔄' },
     { name: 'Temperature Converter', description: 'Convert between Celsius, Fahrenheit, and Kelvin scales', category: 'Chemistry Tools', route: '/chemistry-tools/temperature-converter', icon: '🌡️' },
     { name: 'Molecular Weight Calculator', description: 'Calculate molecular weight from chemical formulas', category: 'Chemistry Tools', route: '/chemistry-tools/molecular-weight-calculator', icon: '⚛️' },
+
+    // Physics Tools
+    { name: 'Kinematics Calculator', description: 'Calculate motion parameters: displacement, velocity, acceleration, and time', category: 'Physics Tools', route: '/physics-tools/kinematics-calculator', icon: '🚀' },
+    { name: 'Force Calculator', description: 'Calculate forces using Newton\'s laws and analyze force systems', category: 'Physics Tools', route: '/physics-tools/force-calculator', icon: '⚡' },
+    { name: 'Energy Calculator', description: 'Calculate kinetic, potential, and mechanical energy', category: 'Physics Tools', route: '/physics-tools/energy-calculator', icon: '🔋' },
+    { name: 'Wave Calculator', description: 'Calculate wave properties: frequency, wavelength, speed, and period', category: 'Physics Tools', route: '/physics-tools/wave-calculator', icon: '🌊' },
   ];
 
   // Filter tools based on search query
@@ -287,6 +293,18 @@ export default function Home() {
         "Molecular Weight Calculator",
       ],
       href: "/chemistry-tools",
+    },
+    {
+      title: "Physics Tools",
+      description: "Calculate and analyze physical phenomena and properties",
+      icon: "⚛️",
+      tools: [
+        "Kinematics Calculator",
+        "Force Calculator",
+        "Energy Calculator",
+        "Wave Calculator",
+      ],
+      href: "/physics-tools",
     },
   ];
 
