@@ -553,7 +553,7 @@ export default function FileCorruptor() {
       <ToolPageMain>
         <PageTitle
           title="File Corruption Tools"
-          description="Create corrupted files with custom sizes for testing and assignment purposes. Generate files that appear broken but meet specific size requirements."
+          description="Generate intentionally invalid files with custom sizes to test upload validation and error handling."
           variant="page"
         />
         <div className="space-y-8">

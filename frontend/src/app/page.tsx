@@ -253,13 +253,13 @@ export default function Home() {
     },
     {
       title: "File Corruption",
-      description: "Create corrupted files with custom sizes for assignments",
+      description: "Generate invalid files to test upload validation and error handling",
       icon: "🔧",
       tools: [
         "File Corruptor",
         "Custom Size Generator",
-        "Assignment Helper",
-        "File Faker",
+        "Upload Validation",
+        "Error Handling Fixtures",
       ],
       href: "/file-corruptor",
     },
