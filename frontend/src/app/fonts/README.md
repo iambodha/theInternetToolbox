@@ -1,0 +1,1 @@
+Geist and Geist Mono variable WOFF2 files from [vercel/geist-font](https://github.com/vercel/geist-font), distributed under the accompanying SIL Open Font License 1.1. These are unmodified upstream files, bundled to keep builds independent of Google Fonts availability.
